@@ -435,7 +435,7 @@ function PricesTab() {
           <PanelHeader eyebrow="Focused view" title="40/42 & Zimbabwe quotes" />
           <div className="divide-y divide-white/7">
             {keyRows.map((row) => (
-              <div key={`${row.origin}-${row.basis}-${row.mode}`} className="flex items-center justify-between gap-4 px-5 py-3.5 sm:px-6">
+              <div key={`${row.origin}-${row.grade}-${row.product}-${row.basis}-${row.mode}`} className="flex items-center justify-between gap-4 px-5 py-3.5 sm:px-6">
                 <div><p className="text-xs font-medium text-slate-300">{row.origin} · {row.grade} {row.product}</p><p className="mt-1 text-[10px] text-slate-600">{row.basis} · {row.mode}</p></div>
                 <p className="font-mono text-sm font-semibold text-slate-100">{row.currency === "USD" ? "$" : "R"}{row.price.toLocaleString()}</p>
               </div>
