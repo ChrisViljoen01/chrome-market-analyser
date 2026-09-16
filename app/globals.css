@@ -1,0 +1,51 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "../vendor/shadcn-tailwind-4.13.0.css";
+
+:root {
+  --background: #07101d;
+  --foreground: #eef6ff;
+  --card: #0a1525;
+  --card-foreground: #eef6ff;
+  --popover: #0a1525;
+  --popover-foreground: #eef6ff;
+  --primary: #67e8f9;
+  --primary-foreground: #07101d;
+  --secondary: #122238;
+  --secondary-foreground: #dbeafe;
+  --muted: #102036;
+  --muted-foreground: #7f91aa;
+  --accent: #0d3140;
+  --accent-foreground: #a5f3fc;
+  --destructive: #fb7185;
+  --border: #1c2d43;
+  --input: #20334b;
+  --ring: #67e8f9;
+  --chart-1: #67e8f9;
+  --chart-2: #fcd34d;
+  --chart-3: #34d399;
+  --chart-4: #fb7185;
+  --chart-5: #93c5fd;
+  --radius: 0.75rem;
+}
+
+@theme inline {
+  --color-background: var(--background); --color-foreground: var(--foreground);
+  --color-card: var(--card); --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover); --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary); --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary); --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted); --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent); --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive); --color-border: var(--border); --color-input: var(--input); --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1); --color-chart-2: var(--chart-2); --color-chart-3: var(--chart-3); --color-chart-4: var(--chart-4); --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px); --radius-md: calc(var(--radius) - 2px); --radius-lg: var(--radius); --radius-xl: calc(var(--radius) + 4px);
+  --font-sans: "Aptos", "Segoe UI Variable", "Segoe UI", sans-serif;
+  --font-mono: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+}
+
+* { box-sizing: border-box; }
+html { background: #07101d; }
+body { margin: 0; background: var(--background); color: var(--foreground); font-family: var(--font-sans); }
+.ore-grid { background-image: radial-gradient(circle at 88% 0%, rgba(14,116,144,.16), transparent 28rem), linear-gradient(rgba(148,163,184,.028) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,.028) 1px, transparent 1px); background-size: auto, 40px 40px, 40px 40px; }
+::selection { background: rgba(103,232,249,.28); color: white; }

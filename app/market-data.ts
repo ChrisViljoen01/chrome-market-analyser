@@ -1,0 +1,167 @@
+export type SourceRecord = {
+  id: string;
+  source: string;
+  dataset: string;
+  asOf: string;
+  freshness: string;
+  confidence: "High" | "Medium";
+  method: string;
+  status: "Verified" | "Corroborated" | "Reference";
+  url: string;
+  note: string;
+};
+
+export const PRICE_HISTORY = [
+  { month: "Sep ’25", observed: 282, base: null, bull: null, bear: null },
+  { month: "Oct", observed: 272, base: null, bull: null, bear: null },
+  { month: "Nov", observed: 271, base: null, bull: null, bear: null },
+  { month: "Dec", observed: 264, base: null, bull: null, bear: null },
+  { month: "Jan ’26", observed: 278, base: null, bull: null, bear: null },
+  { month: "Feb", observed: 298, base: null, bull: null, bear: null },
+  { month: "Mar", observed: 307.5, base: null, bull: null, bear: null },
+  { month: "Apr", observed: 319, base: null, bull: null, bear: null },
+  { month: "May", observed: 310, base: null, bull: null, bear: null },
+  { month: "Jun", observed: 280, base: null, bull: null, bear: null },
+  { month: "Jul", observed: 280, base: null, bull: null, bear: null },
+  { month: "Aug", observed: 286, base: null, bull: null, bear: null },
+  { month: "Sep", observed: 282.5, base: 282.5, bull: 282.5, bear: 282.5 },
+] as const;
+
+export const LCB_PRICES = [
+  { origin: "South Africa", grade: "36/38", product: "Lump", mode: "Truck", basis: "FOT Rustenburg", currency: "ZAR", price: 1650 },
+  { origin: "South Africa", grade: "40/42", product: "Concentrate", mode: "Truck", basis: "FOT Rustenburg", currency: "ZAR", price: 2550 },
+  { origin: "South Africa", grade: "42/44", product: "Concentrate", mode: "Truck", basis: "FOT Rustenburg", currency: "ZAR", price: 3300 },
+  { origin: "South Africa", grade: "44/46", product: "Concentrate", mode: "Truck", basis: "FOT Rustenburg", currency: "ZAR", price: 3750 },
+  { origin: "South Africa", grade: "40/42", product: "Concentrate", mode: "Truck", basis: "DAP City Deep", currency: "ZAR", price: 2950 },
+  { origin: "South Africa", grade: "40/42", product: "Concentrate", mode: "Truck", basis: "DAP Richards Bay", currency: "ZAR", price: 3350 },
+  { origin: "South Africa", grade: "36/38", product: "Lump", mode: "Bulk", basis: "CIF China", currency: "USD", price: 255 },
+  { origin: "South Africa", grade: "38/40", product: "ROM", mode: "Bulk", basis: "CIF China", currency: "USD", price: 245 },
+  { origin: "South Africa", grade: "38/40", product: "Lump", mode: "Bulk", basis: "CIF China", currency: "USD", price: 277 },
+  { origin: "South Africa", grade: "40/42", product: "ROM", mode: "Bulk", basis: "CIF China", currency: "USD", price: 265 },
+  { origin: "South Africa", grade: "40/42", product: "Concentrate", mode: "Bulk", basis: "CIF China", currency: "USD", price: 288 },
+  { origin: "South Africa", grade: "40/42", product: "Concentrate", mode: "Container", basis: "CIF China", currency: "USD", price: 265 },
+  { origin: "South Africa", grade: "42/44", product: "Concentrate", mode: "Bulk", basis: "CIF China", currency: "USD", price: 300 },
+  { origin: "South Africa", grade: "42/44", product: "Concentrate", mode: "Container", basis: "CIF China", currency: "USD", price: 290 },
+  { origin: "Zimbabwe", grade: "48/50", product: "Concentrate", mode: "Bulk", basis: "CIF China", currency: "USD", price: 360 },
+  { origin: "Zimbabwe", grade: "48/50", product: "Concentrate", mode: "Container", basis: "CIF China", currency: "USD", price: 345 },
+] as const;
+
+export const FREIGHT_MARKET = [
+  { size: "SMX 50k / 10%", route: "RBCT → WCI", commodity: "Coal", terms: "10kt SHINC bends", low: 25, high: 26 },
+  { size: "SMX 50k / 10%", route: "Mtwara → WCI", commodity: "Coal", terms: "10kt SHINC bends", low: 22, high: 23 },
+  { size: "SMX 50k / 10%", route: "Maputo → WCI", commodity: "Coal", terms: "10kt SHINC bends", low: 25, high: 26 },
+  { size: "SMX 50k / 10%", route: "Maputo → Qingdao", commodity: "Iron ore", terms: "10kt SHINC bends", low: 33, high: 34 },
+  { size: "SMX 50k / 10%", route: "San Pedro → Qingdao", commodity: "Iron ore", terms: "10kt SHINC bends", low: 41, high: 42 },
+  { size: "SMX 50k / 10%", route: "Durban → Tianjin", commodity: "Chrome", terms: "10kt SHINC bends", low: 35, high: 36 },
+  { size: "PMX 75k / 10%", route: "RBCT → WCI", commodity: "Coal", terms: "10kt SHINC bends", low: 25, high: 26 },
+  { size: "PMX 75k / 10%", route: "Saldanha → Qingdao", commodity: "Iron ore", terms: "10kt SHINC bends", low: 35, high: 36 },
+  { size: "PMX 75k / 10%", route: "RBCT → ARA", commodity: "Coal", terms: "10kt SHINC bends", low: 30, high: 31 },
+  { size: "Cape 150k / 10%", route: "RBCT → ARA", commodity: "Coal", terms: "10kt SHINC bends", low: 20, high: 21 },
+] as const;
+
+export const SOURCES: SourceRecord[] = [
+  {
+    id: "smm-price",
+    source: "Shanghai Metals Market",
+    dataset: "SA chrome ore price assessment",
+    asOf: "16 Sep 2026",
+    freshness: "< 1 day",
+    confidence: "High",
+    method: "Published assessment",
+    status: "Verified",
+    url: "https://www-old.metal.com/price/Minor-Metals/Chromium",
+    note: "40–42% concentrate CIF China at $280–285/dmt; midpoint used as current benchmark.",
+  },
+  {
+    id: "lcb-sheet",
+    source: "London Commodity Brokers",
+    dataset: "SA & Zimbabwe chrome quotes",
+    asOf: "15 Sep 2026 batch",
+    freshness: "1 day",
+    confidence: "Medium",
+    method: "Broker market sheet",
+    status: "Corroborated",
+    url: "https://www.londoncommoditybrokers.com/",
+    note: "User-supplied snapshot. Quote basis, moisture, sizing and payment terms require deal-level confirmation.",
+  },
+  {
+    id: "nexus-freight",
+    source: "Nexus Shipping / LCB",
+    dataset: "Dry-bulk freight indications",
+    asOf: "15 Sep 2026",
+    freshness: "1 day",
+    confidence: "Medium",
+    method: "Broker indication",
+    status: "Corroborated",
+    url: "https://www.londoncommoditybrokers.com/",
+    note: "Durban–Tianjin chrome indication at $35–36/mt for 10kt SHINC bends.",
+  },
+  {
+    id: "smm-stock",
+    source: "Shanghai Metals Market",
+    dataset: "China port chrome inventory",
+    asOf: "11 Sep 2026",
+    freshness: "5 days",
+    confidence: "High",
+    method: "Published inventory survey",
+    status: "Verified",
+    url: "https://news.metal.com/newscontent/104113766-smm-chromium-flash-chinas-chrome-ore-port-inventory-climbs-to-532-mt-as-of-sep-11-tianjin-up-qinzhou-down",
+    note: "5.318 Mt total, up 98.6 kt (+1.89%) week on week; Tianjin at 4.6854 Mt.",
+  },
+  {
+    id: "smm-exports",
+    source: "Shanghai Metals Market",
+    dataset: "South African chrome exports",
+    asOf: "Jul 2026",
+    freshness: "Monthly",
+    confidence: "High",
+    method: "Trade-data analysis",
+    status: "Verified",
+    url: "https://news.metal.com/newscontent/104096220-smm-chromium-flash-south-africas-july-chrome-ore-exports-hit-2026-high-of-265-mt-as-buyer-base-broadens",
+    note: "July exports near 2.65 Mt, +10.3% month on month and the highest reported level of 2026.",
+  },
+  {
+    id: "fastmarkets",
+    source: "Fastmarkets",
+    dataset: "MB-CHO-0003 methodology",
+    asOf: "Current specification",
+    freshness: "Reference",
+    confidence: "High",
+    method: "Price methodology",
+    status: "Verified",
+    url: "https://www.fastmarkets.com/uploads/2025/02/fm-mb-non-ferrous-methodology-specifications.pdf",
+    note: "Weekly CIF Tianjin assessment for 40–42% bulk concentrate, normalized to minimum 5,000 tonnes.",
+  },
+  {
+    id: "sars",
+    source: "SARS",
+    dataset: "Official trade statistics · HS 261000",
+    asOf: "Monthly release",
+    freshness: "Reference",
+    confidence: "High",
+    method: "Government customs data",
+    status: "Reference",
+    url: "https://www.sars.gov.za/customs-and-excise/trade-statistics/",
+    note: "Primary verification route for South African export volumes and destinations.",
+  },
+  {
+    id: "itac",
+    source: "ITAC / South African Government",
+    dataset: "Chrome ore export-control policy",
+    asOf: "Policy watch",
+    freshness: "Event-driven",
+    confidence: "High",
+    method: "Official notice",
+    status: "Reference",
+    url: "https://www.gov.za/documents/notices/international-trade-administration-act-placing-chrome-ore-under-export-control-0",
+    note: "Consultation notice is tracked as a structural risk; current legal status must be verified before commercial action.",
+  },
+] as const;
+
+export const MARKET_EVENTS = [
+  { date: "08 Sep", event: "Fastmarkets weekly benchmark", value: "$289/dmt", impact: "Firm" },
+  { date: "11 Sep", event: "China port stocks", value: "5.318 Mt", impact: "Bearish" },
+  { date: "15 Sep", event: "LCB bulk 40/42 quote", value: "$288/dmt", impact: "Corroborates" },
+  { date: "15 Sep", event: "Durban → Tianjin freight", value: "$35–36/mt", impact: "Neutral" },
+  { date: "16 Sep", event: "SMM midpoint", value: "$282.50/dmt", impact: "Bearish" },
+] as const;
