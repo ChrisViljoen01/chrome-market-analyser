@@ -156,6 +156,61 @@ export const SOURCES: SourceRecord[] = [
     url: "https://www.gov.za/documents/notices/international-trade-administration-act-placing-chrome-ore-under-export-control-0",
     note: "Consultation notice is tracked as a structural risk; current legal status must be verified before commercial action.",
   },
+  {
+    id: "dmpr-fuel",
+    source: "DMPR",
+    dataset: "Official South African fuel-price adjustments",
+    asOf: "Monthly release",
+    freshness: "Monthly",
+    confidence: "High",
+    method: "Government price schedule",
+    status: "Reference",
+    url: "https://www.dmpr.gov.za/Services/Petroleum-Resources/Fuel-Prices",
+    note: "Primary fuel-surcharge input. The September 2026 diesel movement must be applied to the carrier's agreed base month, not treated as a complete freight rate.",
+  },
+  {
+    id: "sanral-tolls",
+    source: "SANRAL / South African Government",
+    dataset: "2026 national toll tariffs",
+    asOf: "1 Mar 2026",
+    freshness: "Annual / event-driven",
+    confidence: "High",
+    method: "Official tariff notice",
+    status: "Verified",
+    url: "https://www.gov.za/documents/notices/south-african-national-roads-agency-limited-and-national-roads-act-toll-tariffs",
+    note: "Class 4 tolls are used as auditable lane-cost inputs. Tariffs include VAT and must be mapped to the actual route and vehicle class.",
+  },
+  {
+    id: "rfa-vci",
+    source: "Road Freight Association",
+    dataset: "Vehicle Cost Index / cost schedules",
+    asOf: "Current edition",
+    freshness: "Subscription reference",
+    confidence: "High",
+    method: "Industry costing model",
+    status: "Reference",
+    url: "https://rfa.co.za/SA/vehicle-cost-schedule/",
+    note: "Useful for cost-per-kilometre calibration across vehicle types. It is a hypothetical costing model, not evidence of a carrier's quoted market rate.",
+  },
+] as const;
+
+export const TRANSPORT_LANES = [
+  { id: "city-deep", label: "Rustenburg → City Deep", distanceKm: 145, tollsZar: 300, observedBasisZarPerT: 400, evidence: "LCB FOT-to-DAP spread" },
+  { id: "richards-bay", label: "Rustenburg → Richards Bay", distanceKm: 720, tollsZar: 1600, observedBasisZarPerT: 800, evidence: "LCB FOT-to-DAP spread" },
+  { id: "durban", label: "Rustenburg → Durban", distanceKm: 730, tollsZar: 1850, observedBasisZarPerT: null, evidence: "No verified carrier quote" },
+  { id: "maputo", label: "Rustenburg → Maputo", distanceKm: 610, tollsZar: 1450, observedBasisZarPerT: null, evidence: "Border / permit costs excluded" },
+] as const;
+
+export const DATA_CONNECTORS = [
+  { source: "SARS trade statistics", layer: "Exports", cadence: "Monthly", mode: "Approved file / publication", cost: "Free", readiness: "Foundation" },
+  { source: "DMPR fuel prices", layer: "Road cost", cadence: "Monthly", mode: "Official publication", cost: "Free", readiness: "Foundation" },
+  { source: "SANRAL toll tariffs", layer: "Road cost", cadence: "Annual", mode: "Official notice / PDF", cost: "Free", readiness: "Foundation" },
+  { source: "Carrier RFQ ledger", layer: "Executed transport", cadence: "Quote event", mode: "Forms / SharePoint", cost: "Internal", readiness: "Highest priority" },
+  { source: "Azure Maps Route Matrix", layer: "Truck distance", cadence: "On route change", mode: "REST API", cost: "Usage based", readiness: "Adapter ready" },
+  { source: "TollGuru", layer: "Route tolls", cadence: "On route change", mode: "REST API", cost: "Paid", readiness: "Optional adapter" },
+  { source: "Fastmarkets", layer: "Chrome benchmark", cadence: "Published schedule", mode: "Licensed API", cost: "Paid", readiness: "Optional adapter" },
+  { source: "S&P Global Commodity Insights", layer: "Metals + dry freight", cadence: "Intraday / daily", mode: "Licensed API / feed", cost: "Paid", readiness: "Optional adapter" },
+  { source: "SMM", layer: "Prices + port stocks", cadence: "Daily / weekly", mode: "Subscription / approved delivery", cost: "Paid", readiness: "Optional adapter" },
 ] as const;
 
 export const MARKET_EVENTS = [

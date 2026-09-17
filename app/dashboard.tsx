@@ -6,20 +6,29 @@ import {
   ArrowDownRight,
   BookOpenCheck,
   Box,
+  Calculator,
   CheckCircle2,
   ChevronRight,
   CircleAlert,
+  Cloud,
   Database,
   Download,
   ExternalLink,
   FileCheck2,
+  Fuel,
   Gauge,
   Info,
+  LockKeyhole,
+  MapPinned,
+  PlugZap,
   RefreshCw,
   RotateCcw,
+  ShieldCheck,
   Ship,
   SlidersHorizontal,
   TrendingDown,
+  Truck,
+  Workflow,
 } from "lucide-react";
 import {
   CartesianGrid,
@@ -41,16 +50,18 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
+  DATA_CONNECTORS,
   FREIGHT_MARKET,
   LCB_PRICES,
   MARKET_EVENTS,
   PRICE_HISTORY,
   SOURCES,
+  TRANSPORT_LANES,
 } from "./market-data";
 
 const FX = 16.2718;
 const CURRENT_PRICE = 282.5;
-type DashboardTab = "overview" | "prices" | "flows" | "forecast" | "sources";
+type DashboardTab = "overview" | "prices" | "flows" | "transport" | "forecast" | "ops" | "sources";
 
 type ForecastInputs = {
   inventoryWoW: number;
@@ -67,6 +78,46 @@ const initialInputs: ForecastInputs = {
   exportGrowth: 10.3,
   tenderChange: -100,
 };
+
+type TransportInputs = {
+  laneId: string;
+  distanceKm: number;
+  payloadT: number;
+  loadedCostKm: number;
+  emptyCostKm: number;
+  backhaulRecovery: number;
+  tollsZar: number;
+  fixedTripZar: number;
+  handlingPerT: number;
+  waitingHours: number;
+  waitingCostHour: number;
+  riskPercent: number;
+  marginPercent: number;
+};
+
+const initialTransport: TransportInputs = {
+  laneId: "richards-bay",
+  distanceKm: 720,
+  payloadT: 34,
+  loadedCostKm: 18,
+  emptyCostKm: 12,
+  backhaulRecovery: 0,
+  tollsZar: 1600,
+  fixedTripZar: 2500,
+  handlingPerT: 45,
+  waitingHours: 4,
+  waitingCostHour: 300,
+  riskPercent: 1,
+  marginPercent: 10,
+};
+
+function calculateTransport(input: TransportInputs) {
+  const emptyLeg = input.distanceKm * input.emptyCostKm * (1 - input.backhaulRecovery / 100);
+  const operating = input.distanceKm * input.loadedCostKm + emptyLeg + input.tollsZar + input.fixedTripZar + input.waitingHours * input.waitingCostHour;
+  const costPerT = operating / Math.max(1, input.payloadT) + input.handlingPerT;
+  const sellPerT = costPerT * (1 + input.riskPercent / 100) * (1 + input.marginPercent / 100);
+  return { emptyLeg, operating, costPerT, sellPerT, tripSell: sellPerT * input.payloadT, usdPerT: sellPerT / FX };
+}
 
 const metrics = [
   {
@@ -610,13 +661,199 @@ function ForecastTab({
   );
 }
 
+function NumberField({
+  label,
+  value,
+  suffix,
+  min = 0,
+  step = 1,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  suffix: string;
+  min?: number;
+  step?: number;
+  onChange: (value: number) => void;
+}) {
+  return (
+    <label className="block rounded-xl border border-white/7 bg-white/[0.025] p-3">
+      <span className="text-xs font-medium text-slate-400">{label}</span>
+      <span className="mt-2 flex items-center gap-2">
+        <input
+          type="number"
+          value={value}
+          min={min}
+          step={step}
+          onChange={(event) => onChange(Number(event.target.value))}
+          className="min-w-0 flex-1 bg-transparent font-mono text-base font-semibold text-slate-100 outline-none"
+        />
+        <span className="text-xs text-slate-600">{suffix}</span>
+      </span>
+    </label>
+  );
+}
+
+function TransportTab({ inputs, setInputs }: { inputs: TransportInputs; setInputs: React.Dispatch<React.SetStateAction<TransportInputs>> }) {
+  const result = calculateTransport(inputs);
+  const selectedLane = TRANSPORT_LANES.find((lane) => lane.id === inputs.laneId) ?? TRANSPORT_LANES[0];
+  const delta = selectedLane.observedBasisZarPerT == null ? null : result.sellPerT - selectedLane.observedBasisZarPerT;
+
+  const set = (key: keyof TransportInputs, value: number | string) => setInputs((previous) => ({ ...previous, [key]: value }));
+  const chooseLane = (laneId: string) => {
+    const lane = TRANSPORT_LANES.find((item) => item.id === laneId);
+    if (!lane) return;
+    setInputs((previous) => ({ ...previous, laneId, distanceKm: lane.distanceKm, tollsZar: lane.tollsZar }));
+  };
+
+  return (
+    <div className="space-y-5">
+      <div className="grid gap-5 xl:grid-cols-[420px_minmax(0,1fr)]">
+        <article className="rounded-2xl border border-white/8 bg-[#0a1525]/95">
+          <PanelHeader eyebrow="Transparent road-cost model" title="Inland chrome transport" meta="Editable assumptions">
+            <Button variant="ghost" size="xs" onClick={() => setInputs(initialTransport)} className="text-slate-500 hover:bg-white/5 hover:text-slate-200"><RotateCcw className="size-3" />Reset</Button>
+          </PanelHeader>
+          <div className="space-y-4 p-5">
+            <label className="block">
+              <span className="text-xs font-medium text-slate-400">Lane scenario</span>
+              <select value={inputs.laneId} onChange={(event) => chooseLane(event.target.value)} className="mt-2 w-full rounded-xl border border-white/10 bg-[#0d192b] px-3 py-3 text-sm text-slate-100 outline-none focus:border-cyan-300/40">
+                {TRANSPORT_LANES.map((lane) => <option key={lane.id} value={lane.id}>{lane.label}</option>)}
+              </select>
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <NumberField label="One-way route" value={inputs.distanceKm} suffix="km" onChange={(value) => set("distanceKm", value)} />
+              <NumberField label="Payload" value={inputs.payloadT} suffix="t" min={1} step={0.5} onChange={(value) => set("payloadT", value)} />
+              <NumberField label="Loaded running cost" value={inputs.loadedCostKm} suffix="R/km" step={0.5} onChange={(value) => set("loadedCostKm", value)} />
+              <NumberField label="Empty running cost" value={inputs.emptyCostKm} suffix="R/km" step={0.5} onChange={(value) => set("emptyCostKm", value)} />
+              <NumberField label="Round-trip tolls" value={inputs.tollsZar} suffix="R" step={50} onChange={(value) => set("tollsZar", value)} />
+              <NumberField label="Fixed trip / dispatch" value={inputs.fixedTripZar} suffix="R" step={100} onChange={(value) => set("fixedTripZar", value)} />
+              <NumberField label="Handling" value={inputs.handlingPerT} suffix="R/t" step={5} onChange={(value) => set("handlingPerT", value)} />
+              <NumberField label="Backhaul recovery" value={inputs.backhaulRecovery} suffix="%" step={5} onChange={(value) => set("backhaulRecovery", Math.min(100, value))} />
+              <NumberField label="Waiting time" value={inputs.waitingHours} suffix="h" step={0.5} onChange={(value) => set("waitingHours", value)} />
+              <NumberField label="Waiting cost" value={inputs.waitingCostHour} suffix="R/h" step={50} onChange={(value) => set("waitingCostHour", value)} />
+              <NumberField label="Risk allowance" value={inputs.riskPercent} suffix="%" step={0.5} onChange={(value) => set("riskPercent", value)} />
+              <NumberField label="Commercial margin" value={inputs.marginPercent} suffix="%" step={0.5} onChange={(value) => set("marginPercent", value)} />
+            </div>
+          </div>
+        </article>
+
+        <div className="space-y-5">
+          <article className="overflow-hidden rounded-2xl border border-white/8 bg-[#0a1525]/95">
+            <PanelHeader eyebrow="Model output" title={selectedLane.label} meta="Modelled · not a carrier quote">
+              <DataBadge tone="amber">Verify route + VAT</DataBadge>
+            </PanelHeader>
+            <div className="grid gap-px bg-white/7 sm:grid-cols-2 xl:grid-cols-4">
+              {[
+                ["Modelled rate", `R${result.sellPerT.toFixed(0)}`, "per tonne", "cyan"],
+                ["Truck sell", `R${result.tripSell.toLocaleString(undefined, { maximumFractionDigits: 0 })}`, `${inputs.payloadT}t payload`, "slate"],
+                ["USD equivalent", `$${result.usdPerT.toFixed(2)}`, `at ${FX.toFixed(4)} USD/ZAR`, "slate"],
+                ["LCB basis spread", selectedLane.observedBasisZarPerT == null ? "No data" : `R${selectedLane.observedBasisZarPerT}`, selectedLane.evidence, selectedLane.observedBasisZarPerT == null ? "slate" : "amber"],
+              ].map(([label, value, note, tone]) => (
+                <div key={label} className="bg-[#0a1525] p-5"><DataBadge tone={tone as "cyan" | "amber" | "slate"}>{label}</DataBadge><p className="mt-4 font-mono text-2xl font-semibold text-white">{value}</p><p className="mt-2 text-xs leading-5 text-slate-500">{note}</p></div>
+              ))}
+            </div>
+            <div className="grid gap-5 border-t border-white/7 p-5 lg:grid-cols-[1fr_300px]">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Cost bridge</p>
+                <div className="mt-4 space-y-3 text-sm">
+                  {[
+                    ["Loaded leg", inputs.distanceKm * inputs.loadedCostKm],
+                    ["Empty leg after backhaul", result.emptyLeg],
+                    ["Tolls + fixed trip", inputs.tollsZar + inputs.fixedTripZar],
+                    ["Waiting", inputs.waitingHours * inputs.waitingCostHour],
+                    ["Handling", inputs.handlingPerT * inputs.payloadT],
+                  ].map(([label, value]) => <div key={String(label)} className="flex items-center justify-between border-b border-white/6 pb-2"><span className="text-slate-500">{label}</span><span className="font-mono text-slate-300">R{Number(value).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span></div>)}
+                </div>
+              </div>
+              <div className={`rounded-xl border p-4 ${delta == null ? "border-white/8 bg-white/[0.025]" : Math.abs(delta) <= 100 ? "border-emerald-300/15 bg-emerald-300/[0.04]" : "border-amber-300/15 bg-amber-300/[0.04]"}`}>
+                <p className="text-xs font-semibold text-slate-300">Observed comparison</p>
+                {delta == null ? <p className="mt-3 text-xs leading-6 text-slate-500">No comparable carrier or basis evidence has been ingested for this lane. Send the same RFQ template to at least three carriers.</p> : <><p className="mt-3 font-mono text-2xl font-semibold">{delta >= 0 ? "+" : "−"}R{Math.abs(delta).toFixed(0)}/t</p><p className="mt-2 text-xs leading-6 text-slate-500">Model versus the LCB FOT-to-DAP spread. The spread may include basis, handling or commercial differences, so it is a sense-check only.</p></>}
+              </div>
+            </div>
+          </article>
+
+          <div className="grid gap-5 lg:grid-cols-3">
+            {[
+              [Fuel, "Fuel index", "Use DMPR monthly diesel movements as a surcharge index against the carrier contract's base month."],
+              [MapPinned, "Distance + tolls", "Verify truck distance in Azure Maps; map SANRAL Class 4 plazas or use TollGuru as an optional paid adapter."],
+              [Truck, "Market rate", "Collect carrier quotes per load and per tonne in SharePoint. Weight recent accepted quotes above list or spot indications."],
+            ].map(([Icon, title, body]) => {
+              const CardIcon = Icon as typeof Truck;
+              return <article key={String(title)} className="rounded-2xl border border-white/8 bg-[#0a1525]/95 p-5"><CardIcon className="size-5 text-cyan-300" /><h3 className="mt-4 text-sm font-semibold text-slate-200">{String(title)}</h3><p className="mt-2 text-xs leading-6 text-slate-500">{String(body)}</p></article>;
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DataOpsTab() {
+  const architecture = [
+    ["1", "Inbox + drop zone", "Broker sheets, carrier quotes, CSV/PDF and screenshots land in a controlled SharePoint library."],
+    ["2", "Power Automate", "The intake-audit flow is live: each new file is timestamped, linked and queued in the refresh log."],
+    ["3", "Parser + OCR", "Power Automate Desktop can run Windows/Tesseract OCR locally; confidence failures go to review."],
+    ["4", "SharePoint lists", "Normalized prices, transport quotes, source checks and refresh logs become the auditable system of record."],
+    ["5", "Dashboard adapter", "A versioned JSON/CSV snapshot feeds this analyser. Paid APIs can replace an adapter without changing the model."],
+  ];
+  return (
+    <div className="space-y-5">
+      <article className="overflow-hidden rounded-2xl border border-white/8 bg-[#0a1525]/95">
+        <PanelHeader eyebrow="Microsoft-first operating model" title="Collection, verification and publishing" meta="No ChatGPT run required">
+          <DataBadge tone="cyan">Power Automate + SharePoint</DataBadge>
+        </PanelHeader>
+        <div className="grid gap-px bg-white/7 lg:grid-cols-5">
+          {architecture.map(([number, title, body]) => <div key={number} className="bg-[#0a1525] p-5"><span className="grid h-8 w-8 place-items-center rounded-lg border border-cyan-300/20 bg-cyan-300/[0.07] font-mono text-xs text-cyan-200">{number}</span><h3 className="mt-4 text-sm font-semibold text-slate-200">{title}</h3><p className="mt-2 text-xs leading-6 text-slate-500">{body}</p></div>)}
+        </div>
+      </article>
+
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_390px]">
+        <article className="overflow-hidden rounded-2xl border border-white/8 bg-[#0a1525]/95">
+          <PanelHeader eyebrow="Replaceable adapters" title="Free foundation → paid verification" meta="No vendor lock-in" />
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[760px] text-left">
+              <thead className="border-b border-white/7 bg-white/[0.02] text-xs uppercase tracking-[0.12em] text-slate-600"><tr><th className="px-5 py-3">Source</th><th className="px-4 py-3">Layer</th><th className="px-4 py-3">Cadence</th><th className="px-4 py-3">Delivery</th><th className="px-4 py-3">Cost</th><th className="px-5 py-3 text-right">Position</th></tr></thead>
+              <tbody className="divide-y divide-white/6">
+                {DATA_CONNECTORS.map((item) => <tr key={item.source} className="text-xs text-slate-400"><td className="px-5 py-4 font-medium text-slate-200">{item.source}</td><td className="px-4 py-4">{item.layer}</td><td className="px-4 py-4 font-mono">{item.cadence}</td><td className="px-4 py-4">{item.mode}</td><td className="px-4 py-4">{item.cost}</td><td className="px-5 py-4 text-right"><DataBadge tone={item.readiness === "Foundation" || item.readiness === "Highest priority" ? "emerald" : "slate"}>{item.readiness}</DataBadge></td></tr>)}
+              </tbody>
+            </table>
+          </div>
+        </article>
+
+        <div className="space-y-5">
+          <article className="rounded-2xl border border-emerald-300/15 bg-emerald-300/[0.035] p-5">
+            <div className="flex items-start gap-3"><LockKeyhole className="mt-0.5 size-5 shrink-0 text-emerald-300" /><div><p className="text-xs font-semibold uppercase tracking-[0.14em] text-emerald-200/70">Preferred service identity</p><h3 className="mt-2 text-sm font-semibold text-emerald-50">YMS – SharePoint API</h3><p className="mt-2 text-xs leading-6 text-emerald-100/60">Application-level <span className="font-mono text-emerald-100">Sites.Selected</span> is already consented. It is suitable for an unattended collector after this specific site is granted access and its secret is stored in a secure connection—not in the dashboard.</p></div></div>
+          </article>
+          <article className="rounded-2xl border border-amber-300/15 bg-amber-300/[0.035] p-5">
+            <div className="flex items-start gap-3"><Cloud className="mt-0.5 size-5 shrink-0 text-amber-200" /><div><p className="text-xs font-semibold uppercase tracking-[0.14em] text-amber-200/70">Interactive identity</p><h3 className="mt-2 text-sm font-semibold text-amber-50">Connect Logistics AI Hub</h3><p className="mt-2 text-xs leading-6 text-amber-100/60">Its permissions are delegated and broad, including mail, Teams and SharePoint. Keep it for signed-in user workflows; do not make it the unattended market collector.</p></div></div>
+          </article>
+          <article className="rounded-2xl border border-white/8 bg-[#0a1525]/95 p-5">
+            <div className="flex items-start gap-3"><ShieldCheck className="mt-0.5 size-5 shrink-0 text-cyan-300" /><div><p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Polite acquisition policy</p><div className="mt-3 space-y-2 text-xs leading-6 text-slate-500"><p>• Match the source&apos;s real publication cadence; do not poll continuously.</p><p>• Cache responses, use ETag / Last-Modified and hash every document.</p><p>• Identify the collector honestly and keep a per-domain request budget.</p><p>• Stop on robots disallow, 401, 403, 429 or CAPTCHA; route the item to manual upload.</p><p>• No proxy rotation, fingerprint spoofing or access-control bypass.</p></div></div></div>
+          </article>
+        </div>
+      </div>
+
+      <div className="grid gap-5 lg:grid-cols-3">
+        {[
+          [Workflow, "Refresh schedule", "Fuel monthly; customs monthly; port stocks weekly; prices only at their published cadence; broker sheets on receipt."],
+          [PlugZap, "Failure handling", "Exponential backoff for transient faults, one retry budget, then quarantine with status and parser-version audit."],
+          [Calculator, "Current limitation", "The live site is still a verified static snapshot. The remaining wiring is the parser/OCR flow, the publisher flow and the site-specific YMS app grant."],
+        ].map(([Icon, title, body]) => {
+          const CardIcon = Icon as typeof Workflow;
+          return <article key={String(title)} className="rounded-2xl border border-white/8 bg-[#0a1525]/95 p-5"><CardIcon className="size-5 text-cyan-300" /><h3 className="mt-4 text-sm font-semibold text-slate-200">{String(title)}</h3><p className="mt-2 text-xs leading-6 text-slate-500">{String(body)}</p></article>;
+        })}
+      </div>
+    </div>
+  );
+}
+
 function SourcesTab() {
   return (
     <div className="space-y-5">
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
         <article className="overflow-hidden rounded-2xl border border-white/8 bg-[#0a1525]/95">
           <PanelHeader eyebrow="Data provenance" title="Source ledger" meta="Observed, indicated and modelled are kept separate">
-            <DataBadge tone="emerald">8 mapped sources</DataBadge>
+            <DataBadge tone="emerald">11 mapped sources</DataBadge>
           </PanelHeader>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[880px] text-left">
@@ -658,6 +895,7 @@ function SourcesTab() {
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<DashboardTab>("overview");
   const [inputs, setInputs] = useState<ForecastInputs>(initialInputs);
+  const [transportInputs, setTransportInputs] = useState<TransportInputs>(initialTransport);
   const activeTabRef = useRef(activeTab);
 
   useEffect(() => {
@@ -731,6 +969,32 @@ export default function Dashboard() {
           return { status: "configured", visibleView: "forecast", updatedDrivers: next };
         },
       }, { signal: lifecycle.signal })).catch(report);
+      void Promise.resolve(modelContext.registerTool({
+        name: "configure_chrome_transport_scenario",
+        title: "Configure chrome transport scenario",
+        description: "Set a South African chrome road-transport lane and editable cost assumptions, then open the Transport Lab.",
+        inputSchema: {
+          type: "object",
+          properties: {
+            laneId: { type: "string", enum: TRANSPORT_LANES.map((lane) => lane.id) },
+            payloadT: { type: "number", minimum: 1, maximum: 40 },
+            loadedCostKm: { type: "number", minimum: 0, maximum: 100 },
+            emptyCostKm: { type: "number", minimum: 0, maximum: 100 },
+            backhaulRecovery: { type: "number", minimum: 0, maximum: 100 },
+            marginPercent: { type: "number", minimum: 0, maximum: 50 },
+          },
+          additionalProperties: false,
+        },
+        annotations: { readOnlyHint: false, untrustedContentHint: false },
+        execute: (input: unknown) => {
+          if (!input || typeof input !== "object" || Array.isArray(input)) throw new Error("Expected a transport scenario object");
+          const next = input as Partial<TransportInputs>;
+          const lane = next.laneId ? TRANSPORT_LANES.find((item) => item.id === next.laneId) : undefined;
+          setTransportInputs((previous) => ({ ...previous, ...(lane ? { laneId: lane.id, distanceKm: lane.distanceKm, tollsZar: lane.tollsZar } : {}), ...next }));
+          setActiveTab("transport");
+          return { status: "configured", visibleView: "transport", updatedDrivers: next };
+        },
+      }, { signal: lifecycle.signal })).catch(report);
     } catch {
       return () => lifecycle.abort();
     }
@@ -769,19 +1033,19 @@ export default function Dashboard() {
                   </div>
                   <div className="hidden flex-1 justify-center lg:flex">
                     <TabsList variant="line" className="h-12 gap-2">
-                      {[["overview", "Overview"], ["prices", "Prices & basis"], ["flows", "Flows & freight"], ["forecast", "Forecast Lab"], ["sources", "Source ledger"]].map(([value, label]) => (
+                      {[["overview", "Overview"], ["prices", "Prices & basis"], ["flows", "Ocean freight"], ["transport", "Transport Lab"], ["forecast", "Forecast Lab"], ["ops", "Data Ops"], ["sources", "Sources"]].map(([value, label]) => (
                         <TabsTrigger key={value} value={value} className="h-12 px-3 text-xs text-slate-500 after:bg-cyan-300 data-[state=active]:text-cyan-100">{label}</TabsTrigger>
                       ))}
                     </TabsList>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="hidden items-center gap-2 rounded-md border border-emerald-400/15 bg-emerald-400/[0.06] px-2.5 py-1.5 text-[9px] font-semibold uppercase tracking-wider text-emerald-300 md:inline-flex"><span className="h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_9px_#6ee7b7]" />7 / 8 current</span>
+                    <span className="hidden items-center gap-2 rounded-md border border-emerald-400/15 bg-emerald-400/[0.06] px-2.5 py-1.5 text-[9px] font-semibold uppercase tracking-wider text-emerald-300 md:inline-flex"><span className="h-1.5 w-1.5 rounded-full bg-emerald-300 shadow-[0_0_9px_#6ee7b7]" />Snapshot verified</span>
                     <Button onClick={exportCsv} variant="outline" size="sm" className="border-white/10 bg-white/[0.025] text-slate-300 hover:bg-cyan-300/10 hover:text-cyan-100"><Download className="size-3.5" /><span className="hidden sm:inline">Export data</span></Button>
                   </div>
                 </div>
                 <div className="overflow-x-auto lg:hidden">
                   <TabsList variant="line" className="h-11 min-w-max">
-                    {[["overview", "Overview"], ["prices", "Prices"], ["flows", "Flows"], ["forecast", "Forecast"], ["sources", "Sources"]].map(([value, label]) => <TabsTrigger key={value} value={value} className="h-11 px-3 text-xs text-slate-500 after:bg-cyan-300 data-[state=active]:text-cyan-100">{label}</TabsTrigger>)}
+                    {[["overview", "Overview"], ["prices", "Prices"], ["flows", "Ocean"], ["transport", "Transport"], ["forecast", "Forecast"], ["ops", "Data Ops"], ["sources", "Sources"]].map(([value, label]) => <TabsTrigger key={value} value={value} className="h-11 px-3 text-xs text-slate-500 after:bg-cyan-300 data-[state=active]:text-cyan-100">{label}</TabsTrigger>)}
                   </TabsList>
                 </div>
               </div>
@@ -803,7 +1067,9 @@ export default function Dashboard() {
               <TabsContent value="overview"><Overview forecastTarget={forecastTarget} setActiveTab={setActiveTab} /></TabsContent>
               <TabsContent value="prices"><PricesTab /></TabsContent>
               <TabsContent value="flows"><FlowsTab /></TabsContent>
+              <TabsContent value="transport"><TransportTab inputs={transportInputs} setInputs={setTransportInputs} /></TabsContent>
               <TabsContent value="forecast"><ForecastTab inputs={inputs} setInputs={setInputs} forecastTarget={forecastTarget} /></TabsContent>
+              <TabsContent value="ops"><DataOpsTab /></TabsContent>
               <TabsContent value="sources"><SourcesTab /></TabsContent>
             </section>
           </Tabs>
