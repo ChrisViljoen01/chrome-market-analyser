@@ -60,7 +60,7 @@ import {
 } from "./market-data";
 
 const FX = 16.2718;
-const CURRENT_PRICE = 282.5;
+const FALLBACK_CURRENT_PRICE = 282.5;
 type DashboardTab = "overview" | "prices" | "flows" | "transport" | "forecast" | "ops" | "sources";
 
 type MarketRefreshStatus = "pending" | "checked" | "partial" | "failed";
@@ -86,6 +86,42 @@ type MarketRefresh = {
   sources: MarketRefreshSource[];
 };
 
+type MarketMetric = {
+  label: string;
+  value: string;
+  delta: string;
+  detail: string;
+  sentiment: "negative" | "neutral" | "positive";
+  source: "Observed" | "Indication" | "Modelled" | "Reference";
+};
+
+type MarketEvent = {
+  date: string;
+  event: string;
+  value: string;
+  impact: string;
+};
+
+type PricePoint = {
+  month: string;
+  observed: number | null;
+  base: number | null;
+  bull: number | null;
+  bear: number | null;
+};
+
+type MarketSnapshot = {
+  generatedAt: string;
+  dataCutLabel: string;
+  asOfIso: string;
+  currentPriceUsdPerDmt: number;
+  fxUsdZar: number;
+  forecastInputs: ForecastInputs;
+  metrics: MarketMetric[];
+  marketEvents: MarketEvent[];
+  priceHistory: PricePoint[];
+};
+
 const fallbackMarketRefresh: MarketRefresh = {
   generatedAt: "2026-09-18T06:30:00.000Z",
   status: "pending",
@@ -109,6 +145,59 @@ const initialInputs: ForecastInputs = {
   fx: 16.27,
   exportGrowth: 10.3,
   tenderChange: -100,
+};
+
+const fallbackMarketSnapshot: MarketSnapshot = {
+  generatedAt: "2026-09-18T06:30:00.000Z",
+  dataCutLabel: "16 Sep 2026 · 17:00 SAST",
+  asOfIso: "2026-09-16T17:00:00+02:00",
+  currentPriceUsdPerDmt: FALLBACK_CURRENT_PRICE,
+  fxUsdZar: FX,
+  forecastInputs: initialInputs,
+  metrics: [
+    {
+      label: "SA 40–42 CIF",
+      value: "$282.50",
+      delta: "−2.25%",
+      detail: "SMM · 16 Sep",
+      sentiment: "negative",
+      source: "Observed",
+    },
+    {
+      label: "China port stock",
+      value: "5.318 Mt",
+      delta: "+1.89%",
+      detail: "98.6 kt WoW build",
+      sentiment: "negative",
+      source: "Observed",
+    },
+    {
+      label: "SA exports",
+      value: "2.65 Mt",
+      delta: "+10.3%",
+      detail: "July · 2026 high",
+      sentiment: "negative",
+      source: "Observed",
+    },
+    {
+      label: "Durban → Tianjin",
+      value: "$35.50",
+      delta: "$35–36",
+      detail: "10kt SHINC bends",
+      sentiment: "neutral",
+      source: "Indication",
+    },
+    {
+      label: "USD / ZAR",
+      value: "16.2718",
+      delta: "15 Sep",
+      detail: "Reference FX",
+      sentiment: "neutral",
+      source: "Observed",
+    },
+  ],
+  marketEvents: [...MARKET_EVENTS],
+  priceHistory: [...PRICE_HISTORY],
 };
 
 type TransportInputs = {
@@ -150,49 +239,6 @@ function calculateTransport(input: TransportInputs) {
   const sellPerT = costPerT * (1 + input.riskPercent / 100) * (1 + input.marginPercent / 100);
   return { emptyLeg, operating, costPerT, sellPerT, tripSell: sellPerT * input.payloadT, usdPerT: sellPerT / FX };
 }
-
-const metrics = [
-  {
-    label: "SA 40–42 CIF",
-    value: "$282.50",
-    delta: "−2.25%",
-    detail: "SMM · 16 Sep",
-    sentiment: "negative",
-    source: "Observed",
-  },
-  {
-    label: "China port stock",
-    value: "5.318 Mt",
-    delta: "+1.89%",
-    detail: "98.6 kt WoW build",
-    sentiment: "negative",
-    source: "Observed",
-  },
-  {
-    label: "SA exports",
-    value: "2.65 Mt",
-    delta: "+10.3%",
-    detail: "July · 2026 high",
-    sentiment: "negative",
-    source: "Observed",
-  },
-  {
-    label: "Durban → Tianjin",
-    value: "$35.50",
-    delta: "$35–36",
-    detail: "10kt SHINC bends",
-    sentiment: "neutral",
-    source: "Indication",
-  },
-  {
-    label: "USD / ZAR",
-    value: "16.2718",
-    delta: "15 Sep",
-    detail: "Reference FX",
-    sentiment: "neutral",
-    source: "Observed",
-  },
-] as const;
 
 function DataBadge({
   children,
@@ -240,7 +286,7 @@ function PanelHeader({
   );
 }
 
-function MetricCard({ metric }: { metric: (typeof metrics)[number] }) {
+function MetricCard({ metric }: { metric: MarketMetric }) {
   const isNegative = metric.sentiment === "negative";
   return (
     <article className="relative bg-[#0a1525] p-5 transition-colors hover:bg-[#0d192b]">
@@ -289,18 +335,26 @@ function PriceTooltipContent({
   );
 }
 
-function PriceChart({ forecastTarget }: { forecastTarget: number }) {
+function PriceChart({
+  forecastTarget,
+  currentPrice,
+  priceHistory,
+}: {
+  forecastTarget: number;
+  currentPrice: number;
+  priceHistory: PricePoint[];
+}) {
   const data = useMemo(() => {
     const target = Number(forecastTarget.toFixed(1));
-    const oct = Number((CURRENT_PRICE + (target - CURRENT_PRICE) * 0.34).toFixed(1));
-    const nov = Number((CURRENT_PRICE + (target - CURRENT_PRICE) * 0.68).toFixed(1));
+    const oct = Number((currentPrice + (target - currentPrice) * 0.34).toFixed(1));
+    const nov = Number((currentPrice + (target - currentPrice) * 0.68).toFixed(1));
     return [
-      ...PRICE_HISTORY,
+      ...priceHistory,
       { month: "Oct · F", observed: null, base: oct, bull: oct + 12, bear: oct - 11 },
       { month: "Nov · F", observed: null, base: nov, bull: nov + 17, bear: nov - 15 },
       { month: "Dec · F", observed: null, base: target, bull: target + 21, bear: target - 19 },
     ];
-  }, [forecastTarget]);
+  }, [currentPrice, forecastTarget, priceHistory]);
 
   return (
     <div className="h-[330px] w-full px-2 pb-3 pt-5 sm:px-4">
@@ -332,14 +386,16 @@ function SourceMark({ source, href }: { source: string; href: string }) {
 function Overview({
   forecastTarget,
   setActiveTab,
+  marketSnapshot,
 }: {
   forecastTarget: number;
   setActiveTab: (tab: DashboardTab) => void;
+  marketSnapshot: MarketSnapshot;
 }) {
   return (
     <div className="space-y-5">
       <div className="grid gap-px overflow-hidden rounded-2xl border border-white/8 bg-white/8 sm:grid-cols-2 xl:grid-cols-5">
-        {metrics.map((metric) => <MetricCard key={metric.label} metric={metric} />)}
+        {marketSnapshot.metrics.map((metric) => <MetricCard key={metric.label} metric={metric} />)}
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_370px]">
@@ -348,12 +404,12 @@ function Overview({
             <div className="flex flex-wrap gap-3 text-[10px] text-slate-400">
               <span><i className="mr-1.5 inline-block h-0.5 w-4 bg-cyan-300 align-middle" />Observed</span>
               <span><i className="mr-1.5 inline-block h-0.5 w-4 border-t border-dashed border-amber-300 align-middle" />Base</span>
-              <DataBadge tone="amber">Modelled after Sep</DataBadge>
+              <DataBadge tone="amber">Modelled after data cut</DataBadge>
             </div>
           </PanelHeader>
           <div className="grid border-b border-white/7 px-5 py-4 sm:grid-cols-[1fr_auto] sm:px-6">
             <div className="flex flex-wrap items-end gap-x-4 gap-y-2">
-              <span className="font-mono text-3xl font-semibold">$282.50</span>
+              <span className="font-mono text-3xl font-semibold">${marketSnapshot.currentPriceUsdPerDmt.toFixed(2)}</span>
               <span className="mb-1 inline-flex items-center gap-1 font-mono text-xs text-rose-300"><ArrowDownRight className="size-3.5" />$6.50 day/day</span>
             </div>
             <div className="mt-3 text-left sm:mt-0 sm:text-right">
@@ -361,7 +417,7 @@ function Overview({
               <p className="mt-1 font-mono text-lg font-semibold text-amber-200">${forecastTarget.toFixed(1)}</p>
             </div>
           </div>
-          <PriceChart forecastTarget={forecastTarget} />
+          <PriceChart forecastTarget={forecastTarget} currentPrice={marketSnapshot.currentPriceUsdPerDmt} priceHistory={marketSnapshot.priceHistory} />
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/7 px-5 py-3 text-[10px] text-slate-600 sm:px-6">
             <span>Historic series compiled from public broker/assessment snapshots; methods differ by date.</span>
             <button onClick={() => setActiveTab("sources")} className="inline-flex items-center gap-1 text-cyan-300/70 hover:text-cyan-200">Audit sources <ChevronRight className="size-3" /></button>
@@ -406,7 +462,7 @@ function Overview({
         <article className="rounded-2xl border border-white/8 bg-[#0a1525]/95">
           <PanelHeader eyebrow="Market tape" title="Latest verified events" meta="Newest first" />
           <div className="divide-y divide-white/7">
-            {[...MARKET_EVENTS].reverse().map((item) => (
+            {[...marketSnapshot.marketEvents].reverse().map((item) => (
               <div key={item.event} className="grid grid-cols-[58px_1fr_auto] items-center gap-3 px-5 py-3.5 sm:px-6">
                 <span className="font-mono text-[10px] text-slate-600">{item.date}</span>
                 <div><p className="text-xs font-medium text-slate-300">{item.event}</p><p className="mt-0.5 font-mono text-[11px] text-slate-500">{item.value}</p></div>
@@ -625,10 +681,14 @@ function ForecastTab({
   inputs,
   setInputs,
   forecastTarget,
+  currentPrice,
+  priceHistory,
 }: {
   inputs: ForecastInputs;
   setInputs: React.Dispatch<React.SetStateAction<ForecastInputs>>;
   forecastTarget: number;
+  currentPrice: number;
+  priceHistory: PricePoint[];
 }) {
   const contributions = [
     { label: "Inventory", value: -inputs.inventoryWoW * 1.2 },
@@ -665,7 +725,7 @@ function ForecastTab({
                 <div key={label as string} className="bg-[#0a1525] p-5 text-center"><DataBadge tone={tone as "rose" | "amber" | "emerald"}>{label}</DataBadge><p className="mt-4 font-mono text-3xl font-semibold">${Number(value).toFixed(1)}</p><p className="mt-2 text-[10px] text-slate-600">{note}</p></div>
               ))}
             </div>
-            <PriceChart forecastTarget={forecastTarget} />
+            <PriceChart forecastTarget={forecastTarget} currentPrice={currentPrice} priceHistory={priceHistory} />
           </article>
 
           <div className="grid gap-5 lg:grid-cols-2">
@@ -831,6 +891,25 @@ function isMarketRefresh(value: unknown): value is MarketRefresh {
   );
 }
 
+function isNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+function isMarketSnapshot(value: unknown): value is MarketSnapshot {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const candidate = value as Partial<MarketSnapshot>;
+  return (
+    typeof candidate.generatedAt === "string" &&
+    typeof candidate.dataCutLabel === "string" &&
+    typeof candidate.asOfIso === "string" &&
+    isNumber(candidate.currentPriceUsdPerDmt) &&
+    isNumber(candidate.fxUsdZar) &&
+    Array.isArray(candidate.metrics) &&
+    Array.isArray(candidate.marketEvents) &&
+    Array.isArray(candidate.priceHistory)
+  );
+}
+
 function formatRefreshTime(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "Pending";
@@ -984,6 +1063,7 @@ export default function Dashboard() {
   const [inputs, setInputs] = useState<ForecastInputs>(initialInputs);
   const [transportInputs, setTransportInputs] = useState<TransportInputs>(initialTransport);
   const [marketRefresh, setMarketRefresh] = useState<MarketRefresh>(fallbackMarketRefresh);
+  const [marketSnapshot, setMarketSnapshot] = useState<MarketSnapshot>(fallbackMarketSnapshot);
   const activeTabRef = useRef(activeTab);
 
   useEffect(() => {
@@ -992,25 +1072,33 @@ export default function Dashboard() {
 
   useEffect(() => {
     const controller = new AbortController();
-    fetch("market-refresh.json", { cache: "no-store", signal: controller.signal })
-      .then((response) => response.ok ? response.json() : null)
-      .then((payload: unknown) => {
-        if (isMarketRefresh(payload)) setMarketRefresh(payload);
-      })
-      .catch(() => undefined);
+    void Promise.all([
+      fetch("market-refresh.json", { cache: "no-store", signal: controller.signal })
+        .then((response) => response.ok ? response.json() : null)
+        .then((payload: unknown) => {
+          if (isMarketRefresh(payload)) setMarketRefresh(payload);
+        }),
+      fetch("market-snapshot.json", { cache: "no-store", signal: controller.signal })
+        .then((response) => response.ok ? response.json() : null)
+        .then((payload: unknown) => {
+          if (!isMarketSnapshot(payload)) return;
+          setMarketSnapshot(payload);
+          setInputs(payload.forecastInputs);
+        }),
+    ]).catch(() => undefined);
     return () => controller.abort();
   }, []);
 
   const forecastTarget = useMemo(() => {
     const value =
-      CURRENT_PRICE -
+      marketSnapshot.currentPriceUsdPerDmt -
       inputs.inventoryWoW * 1.2 -
       inputs.exportGrowth * 0.35 +
       inputs.tenderChange / 22 +
       (inputs.freight - 35.5) * 0.55 +
       (16.27 - inputs.fx) * 2.2;
     return Math.max(220, Math.min(340, Number(value.toFixed(1))));
-  }, [inputs]);
+  }, [inputs, marketSnapshot.currentPriceUsdPerDmt]);
 
   useEffect(() => {
     const modelContext = (document as unknown as {
@@ -1029,12 +1117,10 @@ export default function Dashboard() {
         inputSchema: { type: "object", properties: {}, additionalProperties: false },
         annotations: { readOnlyHint: true, untrustedContentHint: false },
         execute: () => ({
-          asOf: "2026-09-16T17:00:00+02:00",
+          asOf: marketSnapshot.asOfIso,
           activeView: activeTabRef.current,
-          cifUsdPerDmt: 282.5,
-          chinaPortInventoryMt: 5.318,
-          southAfricaExportsMt: 2.65,
-          durbanTianjinFreightUsdPerMt: 35.5,
+          cifUsdPerDmt: marketSnapshot.currentPriceUsdPerDmt,
+          metrics: marketSnapshot.metrics,
           posture: "defensive",
         }),
       }, { signal: lifecycle.signal })).catch(report);
@@ -1098,15 +1184,13 @@ export default function Dashboard() {
       return () => lifecycle.abort();
     }
     return () => lifecycle.abort();
-  }, []);
+  }, [marketSnapshot]);
 
   const exportCsv = () => {
     const rows = [
       ["dataset", "as_of", "metric", "value", "unit", "source"],
-      ["price", "2026-09-16", "SA 40-42 concentrate CIF China", "282.5", "USD/dmt", "SMM"],
-      ["inventory", "2026-09-11", "China chrome ore port inventory", "5.318", "Mt", "SMM"],
-      ["exports", "2026-07", "South Africa chrome ore exports", "2.65", "Mt", "SMM"],
-      ["freight", "2026-09-15", "Durban-Tianjin chrome", "35.5", "USD/mt", "Nexus/LCB"],
+      ["price", marketSnapshot.dataCutLabel, "SA 40-42 concentrate CIF China", String(marketSnapshot.currentPriceUsdPerDmt), "USD/dmt", "Approved snapshot"],
+      ...marketSnapshot.metrics.map((metric) => ["headline", marketSnapshot.dataCutLabel, metric.label, metric.value, metric.source, metric.detail]),
       ...LCB_PRICES.map((row) => ["lcb_quote", "2026-09-15", `${row.origin} ${row.grade} ${row.product} ${row.mode} ${row.basis}`, String(row.price), row.currency + "/mt", "LCB"]),
     ];
     const csv = rows.map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(",")).join("\n");
@@ -1158,16 +1242,16 @@ export default function Dashboard() {
                   <p className="mt-2 max-w-2xl text-xs leading-6 text-slate-500">Observed benchmarks, logistics spreads and forward scenarios—with evidence attached to every signal.</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <div className="mr-2 hidden text-right md:block"><p className="text-[9px] uppercase tracking-[0.16em] text-slate-700">Source refresh</p><p className="mt-1 font-mono text-[10px] text-slate-500">{formatRefreshTime(marketRefresh.generatedAt)} SAST · prices manual</p></div>
+                  <div className="mr-2 hidden text-right md:block"><p className="text-[9px] uppercase tracking-[0.16em] text-slate-700">Data cut</p><p className="mt-1 font-mono text-[10px] text-slate-500">{marketSnapshot.dataCutLabel}</p></div>
                   <div className="flex items-center gap-3 rounded-xl border border-amber-300/15 bg-amber-300/[0.055] px-4 py-2.5"><TrendingDown className="size-4 text-amber-200" /><div><p className="text-[8px] font-semibold uppercase tracking-[0.17em] text-amber-200/55">Market posture</p><p className="text-xs font-semibold text-amber-100">Defensive · supply pressure</p></div></div>
                 </div>
               </div>
 
-              <TabsContent value="overview"><Overview forecastTarget={forecastTarget} setActiveTab={setActiveTab} /></TabsContent>
+              <TabsContent value="overview"><Overview forecastTarget={forecastTarget} setActiveTab={setActiveTab} marketSnapshot={marketSnapshot} /></TabsContent>
               <TabsContent value="prices"><PricesTab /></TabsContent>
               <TabsContent value="flows"><FlowsTab /></TabsContent>
               <TabsContent value="transport"><TransportTab inputs={transportInputs} setInputs={setTransportInputs} /></TabsContent>
-              <TabsContent value="forecast"><ForecastTab inputs={inputs} setInputs={setInputs} forecastTarget={forecastTarget} /></TabsContent>
+              <TabsContent value="forecast"><ForecastTab inputs={inputs} setInputs={setInputs} forecastTarget={forecastTarget} currentPrice={marketSnapshot.currentPriceUsdPerDmt} priceHistory={marketSnapshot.priceHistory} /></TabsContent>
               <TabsContent value="ops"><DataOpsTab marketRefresh={marketRefresh} /></TabsContent>
               <TabsContent value="sources"><SourcesTab /></TabsContent>
             </section>

@@ -1,0 +1,78 @@
+{
+  "generatedAt": "2026-09-18T06:30:00.000Z",
+  "dataCutLabel": "16 Sep 2026 · 17:00 SAST",
+  "asOfIso": "2026-09-16T17:00:00+02:00",
+  "currentPriceUsdPerDmt": 282.5,
+  "fxUsdZar": 16.2718,
+  "forecastInputs": {
+    "inventoryWoW": 1.89,
+    "freight": 35.5,
+    "fx": 16.27,
+    "exportGrowth": 10.3,
+    "tenderChange": -100
+  },
+  "metrics": [
+    {
+      "label": "SA 40–42 CIF",
+      "value": "$282.50",
+      "delta": "−2.25%",
+      "detail": "SMM · 16 Sep",
+      "sentiment": "negative",
+      "source": "Observed"
+    },
+    {
+      "label": "China port stock",
+      "value": "5.318 Mt",
+      "delta": "+1.89%",
+      "detail": "98.6 kt WoW build",
+      "sentiment": "negative",
+      "source": "Observed"
+    },
+    {
+      "label": "SA exports",
+      "value": "2.65 Mt",
+      "delta": "+10.3%",
+      "detail": "July · 2026 high",
+      "sentiment": "negative",
+      "source": "Observed"
+    },
+    {
+      "label": "Durban → Tianjin",
+      "value": "$35.50",
+      "delta": "$35–36",
+      "detail": "10kt SHINC bends",
+      "sentiment": "neutral",
+      "source": "Indication"
+    },
+    {
+      "label": "USD / ZAR",
+      "value": "16.2718",
+      "delta": "15 Sep",
+      "detail": "Reference FX",
+      "sentiment": "neutral",
+      "source": "Observed"
+    }
+  ],
+  "marketEvents": [
+    { "date": "08 Sep", "event": "Fastmarkets weekly benchmark", "value": "$289/dmt", "impact": "Firm" },
+    { "date": "11 Sep", "event": "China port stocks", "value": "5.318 Mt", "impact": "Bearish" },
+    { "date": "15 Sep", "event": "LCB bulk 40/42 quote", "value": "$288/dmt", "impact": "Corroborates" },
+    { "date": "15 Sep", "event": "Durban → Tianjin freight", "value": "$35–36/mt", "impact": "Neutral" },
+    { "date": "16 Sep", "event": "SMM midpoint", "value": "$282.50/dmt", "impact": "Bearish" }
+  ],
+  "priceHistory": [
+    { "month": "Sep ’25", "observed": 282, "base": null, "bull": null, "bear": null },
+    { "month": "Oct", "observed": 272, "base": null, "bull": null, "bear": null },
+    { "month": "Nov", "observed": 271, "base": null, "bull": null, "bear": null },
+    { "month": "Dec", "observed": 264, "base": null, "bull": null, "bear": null },
+    { "month": "Jan ’26", "observed": 278, "base": null, "bull": null, "bear": null },
+    { "month": "Feb", "observed": 298, "base": null, "bull": null, "bear": null },
+    { "month": "Mar", "observed": 307.5, "base": null, "bull": null, "bear": null },
+    { "month": "Apr", "observed": 319, "base": null, "bull": null, "bear": null },
+    { "month": "May", "observed": 310, "base": null, "bull": null, "bear": null },
+    { "month": "Jun", "observed": 280, "base": null, "bull": null, "bear": null },
+    { "month": "Jul", "observed": 280, "base": null, "bull": null, "bear": null },
+    { "month": "Aug", "observed": 286, "base": null, "bull": null, "bear": null },
+    { "month": "Sep", "observed": 282.5, "base": 282.5, "bull": 282.5, "bear": 282.5 }
+  ]
+}

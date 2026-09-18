@@ -42,6 +42,9 @@ jobs:
       - name: Refresh official source status
         run: node scripts/refresh-market-data.mjs
 
+      - name: Validate market snapshot
+        run: node scripts/validate-market-snapshot.mjs
+
       - name: Build static review site
         run: pnpm build:azure
         env:

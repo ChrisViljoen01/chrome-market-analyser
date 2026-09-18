@@ -44,6 +44,16 @@ It also runs daily at **12:00 SAST** (`10:00 UTC`) and can be started immediatel
 
 Each run executes `scripts/refresh-market-data.mjs` before the build. The script checks official public/reference pages and writes `public/market-refresh.json`, which is displayed in the dashboard's **Data Ops** tab. SMM, LCB, Nexus and Fastmarkets values remain manual or licensed inputs until an approved feed or written permission is available; the workflow does not scrape or republish restricted market data.
 
+The market values used by the dashboard live in `public/market-snapshot.json`. Power Automate, a secure backend, or a reviewed manual process can update that JSON file, then the workflow validates it with `scripts/validate-market-snapshot.mjs` and publishes the site. This keeps credentials out of GitHub Pages while still allowing the dashboard to be populated automatically from an approved upstream process.
+
+Recommended Power Automate flow:
+
+1. Collect approved files, emails or licensed feed outputs.
+2. Normalize them into `market-snapshot.json`.
+3. Preserve source type as `Observed`, `Indication`, `Modelled` or `Reference`.
+4. Commit the JSON to `main` through the GitHub Contents API using a Power Automate-owned GitHub token.
+5. Let GitHub Actions validate and deploy the updated public site.
+
 In the repository settings:
 
 1. Open **Settings → Pages**.
