@@ -39,6 +39,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Refresh official source status
+        run: node scripts/refresh-market-data.mjs
+
       - name: Build static review site
         run: pnpm build:azure
         env:

@@ -1,0 +1,8 @@
+{
+  "generatedAt": "2026-09-18T06:30:00.000Z",
+  "status": "pending",
+  "summary": "Official public source checks will run in GitHub Actions. Market prices remain manual/licensed until approved feeds are available.",
+  "dataMode": "manual_market_snapshot_with_public_source_checks",
+  "updatedMetrics": [],
+  "sources": []
+}

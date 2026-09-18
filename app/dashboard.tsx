@@ -63,6 +63,38 @@ const FX = 16.2718;
 const CURRENT_PRICE = 282.5;
 type DashboardTab = "overview" | "prices" | "flows" | "transport" | "forecast" | "ops" | "sources";
 
+type MarketRefreshStatus = "pending" | "checked" | "partial" | "failed";
+
+type MarketRefreshSource = {
+  id: string;
+  label: string;
+  status: "checked" | "manual_required" | "blocked" | "failed";
+  detail: string;
+  url?: string;
+  fetchedAt?: string;
+  httpStatus?: number | null;
+  lastObserved?: string | null;
+  evidence?: string;
+};
+
+type MarketRefresh = {
+  generatedAt: string;
+  status: MarketRefreshStatus;
+  summary: string;
+  dataMode: string;
+  updatedMetrics: unknown[];
+  sources: MarketRefreshSource[];
+};
+
+const fallbackMarketRefresh: MarketRefresh = {
+  generatedAt: "2026-09-18T06:30:00.000Z",
+  status: "pending",
+  summary: "Official public source checks will run in GitHub Actions. Market prices remain manual/licensed until approved feeds are available.",
+  dataMode: "manual_market_snapshot_with_public_source_checks",
+  updatedMetrics: [],
+  sources: [],
+};
+
 type ForecastInputs = {
   inventoryWoW: number;
   freight: number;
@@ -788,7 +820,30 @@ function TransportTab({ inputs, setInputs }: { inputs: TransportInputs; setInput
   );
 }
 
-function DataOpsTab() {
+function isMarketRefresh(value: unknown): value is MarketRefresh {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const candidate = value as Partial<MarketRefresh>;
+  return (
+    typeof candidate.generatedAt === "string" &&
+    typeof candidate.status === "string" &&
+    typeof candidate.summary === "string" &&
+    Array.isArray(candidate.sources)
+  );
+}
+
+function formatRefreshTime(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "Pending";
+  return date.toLocaleString("en-ZA", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Africa/Johannesburg",
+  });
+}
+
+function DataOpsTab({ marketRefresh }: { marketRefresh: MarketRefresh }) {
   const architecture = [
     ["1", "Inbox + drop zone", "Broker sheets, carrier quotes, CSV/PDF and screenshots land in a controlled SharePoint library."],
     ["2", "Power Automate", "The intake-audit flow is live: each new file is timestamped, linked and queued in the refresh log."],
@@ -805,6 +860,38 @@ function DataOpsTab() {
         <div className="grid gap-px bg-white/7 lg:grid-cols-5">
           {architecture.map(([number, title, body]) => <div key={number} className="bg-[#0a1525] p-5"><span className="grid h-8 w-8 place-items-center rounded-lg border border-cyan-300/20 bg-cyan-300/[0.07] font-mono text-xs text-cyan-200">{number}</span><h3 className="mt-4 text-sm font-semibold text-slate-200">{title}</h3><p className="mt-2 text-xs leading-6 text-slate-500">{body}</p></div>)}
         </div>
+      </article>
+
+      <article className="overflow-hidden rounded-2xl border border-white/8 bg-[#0a1525]/95">
+        <PanelHeader eyebrow="Daily refresh audit" title="Official source checks" meta={`Last run · ${formatRefreshTime(marketRefresh.generatedAt)} SAST`}>
+          <DataBadge tone={marketRefresh.status === "checked" ? "emerald" : marketRefresh.status === "pending" ? "slate" : "amber"}>
+            {marketRefresh.status}
+          </DataBadge>
+        </PanelHeader>
+        <div className="border-b border-white/7 px-5 py-3 text-xs leading-6 text-slate-500 sm:px-6">{marketRefresh.summary}</div>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[760px] text-left">
+            <thead className="border-b border-white/7 bg-white/[0.02] text-[9px] uppercase tracking-[0.16em] text-slate-600">
+              <tr><th className="px-5 py-3">Source</th><th className="px-4 py-3">Status</th><th className="px-4 py-3">Observed marker</th><th className="px-5 py-3">Evidence</th></tr>
+            </thead>
+            <tbody className="divide-y divide-white/6">
+              {marketRefresh.sources.length ? marketRefresh.sources.map((source) => (
+                <tr key={source.id} className="align-top text-xs text-slate-400">
+                  <td className="px-5 py-4">
+                    {source.url ? <SourceMark source={source.label} href={source.url} /> : <span className="font-medium text-slate-300">{source.label}</span>}
+                    <p className="mt-1 max-w-[300px] text-[10px] leading-5 text-slate-600">{source.detail}</p>
+                  </td>
+                  <td className="px-4 py-4"><DataBadge tone={source.status === "checked" ? "emerald" : source.status === "manual_required" ? "amber" : "rose"}>{source.status.replaceAll("_", " ")}</DataBadge></td>
+                  <td className="px-4 py-4 font-mono text-[11px] text-slate-500">{source.lastObserved ?? "N/A"}</td>
+                  <td className="px-5 py-4 text-slate-500">{source.evidence ?? "Awaiting approved data feed or manual snapshot."}</td>
+                </tr>
+              )) : (
+                <tr><td className="px-5 py-4 text-xs text-slate-500" colSpan={4}>The deployed refresh audit has not run yet.</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        <div className="border-t border-white/7 px-5 py-3 text-[10px] leading-5 text-slate-600 sm:px-6">The workflow checks official public sources only. SMM, broker sheets and paid benchmarks remain manual or licensed inputs until written permission or a formal feed is available.</div>
       </article>
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_390px]">
@@ -896,11 +983,23 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<DashboardTab>("overview");
   const [inputs, setInputs] = useState<ForecastInputs>(initialInputs);
   const [transportInputs, setTransportInputs] = useState<TransportInputs>(initialTransport);
+  const [marketRefresh, setMarketRefresh] = useState<MarketRefresh>(fallbackMarketRefresh);
   const activeTabRef = useRef(activeTab);
 
   useEffect(() => {
     activeTabRef.current = activeTab;
   }, [activeTab]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch("market-refresh.json", { cache: "no-store", signal: controller.signal })
+      .then((response) => response.ok ? response.json() : null)
+      .then((payload: unknown) => {
+        if (isMarketRefresh(payload)) setMarketRefresh(payload);
+      })
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, []);
 
   const forecastTarget = useMemo(() => {
     const value =
@@ -1059,7 +1158,7 @@ export default function Dashboard() {
                   <p className="mt-2 max-w-2xl text-xs leading-6 text-slate-500">Observed benchmarks, logistics spreads and forward scenarios—with evidence attached to every signal.</p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <div className="mr-2 hidden text-right md:block"><p className="text-[9px] uppercase tracking-[0.16em] text-slate-700">Data cut</p><p className="mt-1 font-mono text-[10px] text-slate-500">16 Sep 2026 · 17:00 SAST</p></div>
+                  <div className="mr-2 hidden text-right md:block"><p className="text-[9px] uppercase tracking-[0.16em] text-slate-700">Source refresh</p><p className="mt-1 font-mono text-[10px] text-slate-500">{formatRefreshTime(marketRefresh.generatedAt)} SAST · prices manual</p></div>
                   <div className="flex items-center gap-3 rounded-xl border border-amber-300/15 bg-amber-300/[0.055] px-4 py-2.5"><TrendingDown className="size-4 text-amber-200" /><div><p className="text-[8px] font-semibold uppercase tracking-[0.17em] text-amber-200/55">Market posture</p><p className="text-xs font-semibold text-amber-100">Defensive · supply pressure</p></div></div>
                 </div>
               </div>
@@ -1069,7 +1168,7 @@ export default function Dashboard() {
               <TabsContent value="flows"><FlowsTab /></TabsContent>
               <TabsContent value="transport"><TransportTab inputs={transportInputs} setInputs={setTransportInputs} /></TabsContent>
               <TabsContent value="forecast"><ForecastTab inputs={inputs} setInputs={setInputs} forecastTarget={forecastTarget} /></TabsContent>
-              <TabsContent value="ops"><DataOpsTab /></TabsContent>
+              <TabsContent value="ops"><DataOpsTab marketRefresh={marketRefresh} /></TabsContent>
               <TabsContent value="sources"><SourcesTab /></TabsContent>
             </section>
           </Tabs>

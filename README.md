@@ -40,7 +40,9 @@ The future private production architecture can add a server-side adapter such as
 ## GitHub Pages deployment
 
 The workflow in `.github/workflows/deploy-pages.yml` builds the app with `pnpm build:azure` and deploys `azure-dist` to GitHub Pages whenever `main` changes.
-It also runs daily at **12:00 SAST** (`10:00 UTC`) and can be started immediately from **Actions → Deploy review site → Run workflow**. Until an approved CSV/JSON snapshot is supplied, a scheduled run republishes the current audited snapshot; it does not invent values or scrape subscription sites.
+It also runs daily at **12:00 SAST** (`10:00 UTC`) and can be started immediately from **Actions → Deploy review site → Run workflow**.
+
+Each run executes `scripts/refresh-market-data.mjs` before the build. The script checks official public/reference pages and writes `public/market-refresh.json`, which is displayed in the dashboard's **Data Ops** tab. SMM, LCB, Nexus and Fastmarkets values remain manual or licensed inputs until an approved feed or written permission is available; the workflow does not scrape or republish restricted market data.
 
 In the repository settings:
 
