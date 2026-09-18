@@ -40,6 +40,7 @@ The future private production architecture can add a server-side adapter such as
 ## GitHub Pages deployment
 
 The workflow in `.github/workflows/deploy-pages.yml` builds the app with `pnpm build:azure` and deploys `azure-dist` to GitHub Pages whenever `main` changes.
+It also runs daily at **12:00 SAST** (`10:00 UTC`) and can be started immediately from **Actions → Deploy review site → Run workflow**. Until an approved CSV/JSON snapshot is supplied, a scheduled run republishes the current audited snapshot; it does not invent values or scrape subscription sites.
 
 In the repository settings:
 
