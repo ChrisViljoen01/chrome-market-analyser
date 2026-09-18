@@ -1,61 +1,59 @@
 # Chrome Market Analyser
 
-An internal Connect Logistics market-intelligence tool for South African chrome ore. It combines verified market observations, chrome pricing and basis comparisons, ocean freight, road-transport modelling, historical context and scenario forecasts.
+The Connect Logistics Chrome Market Analyser is a reviewable market-intelligence interface for South African chrome ore. It combines verified market observations, chrome pricing and basis comparisons, ocean freight, road-transport modelling, historical context and scenario forecasts.
 
-This repository is the handoff point for GitHub Copilot and future development. The intended production platform is **Microsoft Azure + Entra ID + SharePoint + Power Automate**. OpenAI Sites / `gpt.site` is retained only as a temporary legacy fallback and is not the target architecture.
+The current public deployment is a **static GitHub Pages review build**. It uses the audited snapshot in `app/market-data.ts`; it does not connect to SharePoint, Microsoft Graph or Entra ID and it does not contain credentials.
 
 ## Current status — 18 September 2026
 
 - The complete dashboard interface is implemented and visually verified.
-- The standalone Azure/Vite production build passes.
-- Entra-authenticated Azure Static Web Apps routing is configured.
-- A protected Azure Functions adapter is scaffolded for Microsoft Graph and SharePoint.
-- An Azure DevOps deployment pipeline is included.
-- SharePoint intake, observations, transport quotes and refresh-log structures exist.
-- The Power Automate flow **Chrome Market - Intake Audit** records new intake documents in the refresh log.
-- Production Graph credentials, exact SharePoint list IDs and the Azure resource still need to be configured.
-- Dashboard market values remain a verified static snapshot until the Graph adapter is connected.
+- The standalone Vite build is ready for GitHub Pages stakeholder review.
+- Dashboard market values are a verified static snapshot.
+- The optional Microsoft Graph/SharePoint adapter remains isolated under `api/` for a future private backend.
+- No Entra, Graph, SharePoint or client-secret configuration is required for the public review site.
 
-## Architecture
+## Review architecture
 
 ```text
-Broker files / public documents / carrier quotes
-                    |
-                    v
-        SharePoint Chrome Market Intake
-                    |
-                    v
-              Power Automate
-                    |
-          +---------+----------+
-          |                    |
-          v                    v
-Market Observations     Transport Quotes
-          |                    |
-          +---------+----------+
-                    |
-                    v
-       Azure Functions Graph adapter
-                    |
-                    v
-       Azure Static Web Apps dashboard
-                    |
-                    v
-          Microsoft Entra sign-in
+GitHub repository
+       |
+       v
+GitHub Actions
+       |
+       v
+Static Vite build
+       |
+       v
+GitHub Pages
 ```
+
+The future private production architecture can add a server-side adapter such as Azure Functions, AWS Lambda or another approved backend. Secrets must remain in that backend and must never be placed in the public repository or browser.
 
 ## Technology
 
 - React 19 and TypeScript
-- Vite standalone Azure build
+- Vite standalone build
 - Tailwind CSS
 - Recharts
-- Azure Static Web Apps
-- Azure Functions
-- Microsoft Entra ID
-- Microsoft Graph
-- SharePoint Online
-- Power Automate
+- GitHub Actions and GitHub Pages for review deployment
+
+## GitHub Pages deployment
+
+The workflow in `.github/workflows/deploy-pages.yml` builds the app with `pnpm build:azure` and deploys `azure-dist` to GitHub Pages whenever `main` changes.
+
+In the repository settings:
+
+1. Open **Settings → Pages**.
+2. Set **Source** to **GitHub Actions**.
+3. Push to `main` or run **Actions → Deploy review site → Run workflow**.
+
+The resulting URL is normally:
+
+```text
+https://<github-user>.github.io/<repository-name>/
+```
+
+The workflow supplies the repository path as Vite's base path, so assets work when the site is hosted under a project URL.
 
 ## Local setup
 
@@ -68,14 +66,14 @@ pnpm dev:azure
 
 Open `http://localhost:5173`.
 
-Production checks:
+Build checks:
 
 ```powershell
 pnpm build:azure
 pnpm lint
 ```
 
-The Azure build output is written to `azure-dist/` and is intentionally excluded from Git.
+The static build output is written to `azure-dist/` and is intentionally excluded from Git. The directory name is retained for compatibility with the existing Vite configuration.
 
 ## Important files
 
@@ -85,88 +83,32 @@ The Azure build output is written to `azure-dist/` and is intentionally excluded
 | `app/market-data.ts` | Audited snapshot data, transport lanes and connector catalogue |
 | `azure/main.tsx` | Standalone Azure application entry point |
 | `vite.azure.config.ts` | Azure/Vite build configuration |
-| `public/staticwebapp.config.json` | Entra access, SPA fallback and security headers |
+| `.github/workflows/deploy-pages.yml` | Public GitHub Pages build and deployment |
+| `public/staticwebapp.config.json` | Reserved for a future Azure deployment |
 | `api/health/` | Azure health endpoint |
 | `api/market/` | Server-side Microsoft Graph and SharePoint adapter |
 | `azure-pipelines.yml` | Azure DevOps build and deployment pipeline |
 | `AZURE-DEPLOYMENT.md` | Detailed Microsoft deployment instructions |
 
-## Microsoft resources
+## Future private data connection
 
-Tenant:
+The `api/market/` function is not used by GitHub Pages. It is a future server-side adapter that would:
 
-- Tenant ID: `328838f1-3214-4e14-9263-47b9595e3f64`
-- SharePoint site: <https://connectlogisticscoza.sharepoint.com/sites/ProcessOptimizationandDevelopment>
-- Power Automate environment: `Default-328838f1-3214-4e14-9263-47b9595e3f64`
+- obtain a Microsoft Graph token using server-side configuration;
+- read normalized SharePoint observations and transport quotes; and
+- return validated JSON to the dashboard.
 
-Preferred unattended identity:
-
-- App: `YMS - SharePoint API`
-- Client ID: `136f1446-0a92-4947-99c1-574e0dc3021a`
-- Permission model: Microsoft Graph `Sites.Selected` application permission
-- Required production change: grant this app access only to the Process Optimization and Development site
-
-Do not commit or paste the client secret into this repository, Copilot chat, frontend code or pipeline YAML. Store it only in Azure application settings or Key Vault.
-
-The broader `Connect Logistics AI Hub` app uses delegated permissions and should remain an interactive identity rather than the unattended collector.
-
-## SharePoint system of record
-
-- [Chrome Market Intake](https://connectlogisticscoza.sharepoint.com/sites/ProcessOptimizationandDevelopment/Chrome%20Market%20Intake/Forms/AllItems.aspx)
-- [Chrome Market Observations](https://connectlogisticscoza.sharepoint.com/sites/ProcessOptimizationandDevelopment/Lists/Chrome%20Market%20Observations/AllItems.aspx)
-- [Chrome Transport Quotes](https://connectlogisticscoza.sharepoint.com/sites/ProcessOptimizationandDevelopment/Lists/Chrome%20Transport%20Quotes/AllItems.aspx)
-- [Chrome Refresh Log](https://connectlogisticscoza.sharepoint.com/sites/ProcessOptimizationandDevelopment/Lists/Chrome%20Refresh%20Log/AllItems.aspx)
-
-## Azure configuration
-
-Create a private Azure Static Web App and configure:
-
-- App location: `/`
-- Build command: `pnpm build:azure`
-- Output location: `azure-dist`
-- API location: `api`
-- Node.js: 20 or newer
-
-Required server-side application settings:
-
-```text
-ENTRA_TENANT_ID
-ENTRA_CLIENT_ID
-ENTRA_CLIENT_SECRET
-GRAPH_SITE_ID
-GRAPH_OBSERVATIONS_LIST_ID
-GRAPH_TRANSPORT_LIST_ID
-```
-
-For Azure DevOps, store the deployment token as the secret variable:
-
-```text
-AZURE_STATIC_WEB_APPS_API_TOKEN
-```
-
-## GitHub handoff
-
-This folder has full Git history but deliberately has no remote configured. After creating a private GitHub repository, connect it with:
-
-```powershell
-git remote add origin https://github.com/<organisation>/<repository>.git
-git push -u origin main
-```
-
-Recommended repository name: `chrome-market-analyser`.
+The required Entra and Graph settings belong only in the chosen private backend's protected application settings. They must not be added to GitHub Actions, frontend code, `.env` files committed to the repository or browser storage.
 
 ## Next implementation tasks
 
-1. Create the private GitHub or Azure DevOps repository and push `main`.
-2. Create an Azure Static Web Apps resource in the Connect Logistics subscription.
-3. Add the protected Azure application settings listed above.
-4. Obtain explicit administrator approval immediately before granting the YMS app site-specific access.
-5. Resolve the Graph site and list IDs and test `/api/health` followed by `/api/market`.
-6. Replace static snapshot values in the dashboard with validated API results and retain the static snapshot as a visible fallback.
-7. Build parser/OCR and publishing flows, including content hashes, parser versions and quarantine handling.
-8. Add unit tests for field normalization, transport calculations and forecast boundaries.
-9. Add monitoring for stale data, failed refreshes and source-confidence changes.
-10. Retire the legacy `gpt.site` deployment only after Entra sign-in and live data refresh have been verified.
+1. Review the public static site with stakeholders.
+2. Decide whether the future backend should be Azure, AWS or another approved platform.
+3. Define the approved SharePoint/Graph security model with an administrator.
+4. Add the private backend and typed dashboard adapter.
+5. Build parser/OCR and publishing flows, including content hashes, parser versions and quarantine handling.
+6. Add unit tests for field normalization, transport calculations and forecast boundaries.
+7. Add monitoring for stale data, failed refreshes and source-confidence changes.
 
 ## Data and modelling notes
 

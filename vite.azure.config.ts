@@ -8,6 +8,7 @@ const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 export default defineConfig({
   root: path.join(projectRoot, "azure"),
   publicDir: path.join(projectRoot, "public"),
+  base: process.env.VITE_BASE_PATH ?? "/",
   plugins: [react()],
   resolve: {
     alias: {
