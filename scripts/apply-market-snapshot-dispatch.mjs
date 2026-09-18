@@ -21,6 +21,9 @@ async function readSnapshotInput() {
   if (process.env.MARKET_SNAPSHOT_JSON?.trim()) {
     return JSON.parse(process.env.MARKET_SNAPSHOT_JSON);
   }
+  if (process.env.MARKET_SNAPSHOT_BASE64?.trim()) {
+    return JSON.parse(Buffer.from(process.env.MARKET_SNAPSHOT_BASE64, "base64").toString("utf8"));
+  }
 
   const eventPath = process.env.GITHUB_EVENT_PATH;
   if (!eventPath) throw new Error("GITHUB_EVENT_PATH was not provided");

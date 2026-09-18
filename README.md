@@ -104,6 +104,8 @@ Request body:
 }
 ```
 
+If it is easier in Power Automate, send `"snapshot_base64": "<base64 JSON>"` inside `client_payload` instead of the nested `snapshot` object.
+
 In production, populate `metrics`, `marketEvents` and `priceHistory` with the complete arrays matching `public/market-snapshot.json`, not just the minimal example above. The token belongs only in Power Automate's secure connection/secret storage, not in the repository, browser or `.env` file.
 
 In the repository settings:

@@ -6,8 +6,8 @@ on:
       - market_snapshot
   workflow_dispatch:
     inputs:
-      snapshot_json:
-        description: "Complete market-snapshot.json payload for validation or ingestion"
+      snapshot_base64:
+        description: "Base64-encoded complete market-snapshot.json payload for validation or ingestion"
         required: true
         type: string
       dry_run:
@@ -40,7 +40,7 @@ jobs:
       - name: Validate and apply dispatched snapshot
         run: node scripts/apply-market-snapshot-dispatch.mjs
         env:
-          MARKET_SNAPSHOT_JSON: ${{ inputs.snapshot_json }}
+          MARKET_SNAPSHOT_BASE64: ${{ inputs.snapshot_base64 }}
           DRY_RUN: ${{ inputs.dry_run }}
 
       - name: Commit updated market snapshot
