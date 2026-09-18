@@ -18,6 +18,10 @@ The Chrome Market Analyser can run without OpenAI Sites or ChatGPT authenticatio
 - API location: `api`
 - Node.js: 20 or newer
 
+## Source and release
+
+Create a private Azure DevOps repository and push this checkout to its `main` branch. The included `azure-pipelines.yml` builds and deploys the app. Add the Azure Static Web Apps deployment token as the secret pipeline variable `AZURE_STATIC_WEB_APPS_API_TOKEN`; do not place the token in YAML or source control.
+
 ## Azure application settings
 
 Configure these values in Azure Static Web Apps. Never commit them to source control.
