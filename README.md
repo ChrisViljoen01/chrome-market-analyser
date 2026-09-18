@@ -51,8 +51,60 @@ Recommended Power Automate flow:
 1. Collect approved files, emails or licensed feed outputs.
 2. Normalize them into `market-snapshot.json`.
 3. Preserve source type as `Observed`, `Indication`, `Modelled` or `Reference`.
-4. Commit the JSON to `main` through the GitHub Contents API using a Power Automate-owned GitHub token.
-5. Let GitHub Actions validate and deploy the updated public site.
+4. Send the JSON to GitHub using the **Ingest market snapshot** workflow.
+5. Let GitHub validate, commit and deploy the updated public site.
+
+Power Automate should use an **HTTP** action:
+
+```text
+POST https://api.github.com/repos/ChrisViljoen01/chrome-market-analyser/dispatches
+Authorization: Bearer <Power Automate GitHub token>
+Accept: application/vnd.github+json
+X-GitHub-Api-Version: 2022-11-28
+Content-Type: application/json
+```
+
+Request body:
+
+```json
+{
+  "event_type": "market_snapshot",
+  "client_payload": {
+    "snapshot": {
+      "generatedAt": "2026-09-18T10:00:00.000Z",
+      "dataCutLabel": "18 Sep 2026 · 12:00 SAST",
+      "asOfIso": "2026-09-18T12:00:00+02:00",
+      "currentPriceUsdPerDmt": 282.5,
+      "fxUsdZar": 16.27,
+      "forecastInputs": {
+        "inventoryWoW": 1.89,
+        "freight": 35.5,
+        "fx": 16.27,
+        "exportGrowth": 10.3,
+        "tenderChange": -100
+      },
+      "metrics": [
+        {
+          "label": "SA 40–42 CIF",
+          "value": "$282.50",
+          "delta": "0%",
+          "detail": "Approved snapshot",
+          "sentiment": "neutral",
+          "source": "Observed"
+        }
+      ],
+      "marketEvents": [
+        { "date": "18 Sep", "event": "Approved market snapshot", "value": "$282.50/dmt", "impact": "Reference" }
+      ],
+      "priceHistory": [
+        { "month": "Sep", "observed": 282.5, "base": 282.5, "bull": 282.5, "bear": 282.5 }
+      ]
+    }
+  }
+}
+```
+
+In production, populate `metrics`, `marketEvents` and `priceHistory` with the complete arrays matching `public/market-snapshot.json`, not just the minimal example above. The token belongs only in Power Automate's secure connection/secret storage, not in the repository, browser or `.env` file.
 
 In the repository settings:
 
