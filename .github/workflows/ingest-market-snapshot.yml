@@ -17,6 +17,7 @@ on:
         type: boolean
 
 permissions:
+  actions: write
   contents: write
 
 concurrency:
@@ -44,6 +45,7 @@ jobs:
           DRY_RUN: ${{ inputs.dry_run }}
 
       - name: Commit updated market snapshot
+        id: commit
         if: github.event_name == 'repository_dispatch' || inputs.dry_run == false
         run: |
           git config user.name "github-actions[bot]"
@@ -51,7 +53,15 @@ jobs:
           git add public/market-snapshot.json
           if git diff --cached --quiet; then
             echo "No market snapshot changes to commit."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
           else
             git commit -m "Update market snapshot from approved intake"
             git push origin HEAD:main
+            echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
+
+      - name: Deploy updated market snapshot
+        if: steps.commit.outputs.changed == 'true'
+        run: gh workflow run deploy-pages.yml --ref main
+        env:
+          GH_TOKEN: ${{ github.token }}
