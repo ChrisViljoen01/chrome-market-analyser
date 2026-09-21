@@ -19,10 +19,12 @@ if (dryRun) {
 
 async function readSnapshotInput() {
   if (process.env.MARKET_SNAPSHOT_JSON?.trim()) {
-    return JSON.parse(process.env.MARKET_SNAPSHOT_JSON);
+    return normalizeSnapshotInput(JSON.parse(process.env.MARKET_SNAPSHOT_JSON));
   }
   if (process.env.MARKET_SNAPSHOT_BASE64?.trim()) {
-    return JSON.parse(Buffer.from(process.env.MARKET_SNAPSHOT_BASE64, "base64").toString("utf8"));
+    return normalizeSnapshotInput(
+      JSON.parse(Buffer.from(process.env.MARKET_SNAPSHOT_BASE64, "base64").toString("utf8")),
+    );
   }
 
   const eventPath = process.env.GITHUB_EVENT_PATH;
@@ -31,11 +33,43 @@ async function readSnapshotInput() {
   const event = JSON.parse(await readFile(eventPath, "utf8"));
   const payload = event.client_payload ?? {};
 
-  if (payload.snapshot && typeof payload.snapshot === "object") return payload.snapshot;
-  if (typeof payload.snapshot_json === "string") return JSON.parse(payload.snapshot_json);
+  if (payload.snapshot && typeof payload.snapshot === "object") {
+    return normalizeSnapshotInput(payload.snapshot);
+  }
+  if (typeof payload.snapshot_json === "string") {
+    return normalizeSnapshotInput(JSON.parse(payload.snapshot_json));
+  }
   if (typeof payload.snapshot_base64 === "string") {
-    return JSON.parse(Buffer.from(payload.snapshot_base64, "base64").toString("utf8"));
+    return normalizeSnapshotInput(
+      JSON.parse(Buffer.from(payload.snapshot_base64, "base64").toString("utf8")),
+    );
   }
 
   throw new Error("No market snapshot payload was provided. Send client_payload.snapshot, snapshot_json or snapshot_base64.");
+}
+
+function normalizeSnapshotInput(value) {
+  let normalized = value;
+
+  // Power Automate aggregates outputs from an Apply to each action into a
+  // one-item array. Accept that transport shape while still validating the
+  // final market snapshot object below.
+  if (Array.isArray(normalized)) {
+    if (normalized.length !== 1) {
+      throw new Error(`Expected exactly one approved snapshot, received ${normalized.length}.`);
+    }
+    [normalized] = normalized;
+  }
+
+  if (typeof normalized === "string") {
+    normalized = JSON.parse(normalized);
+  }
+
+  // Also accept the minimal SharePoint item shape used by the flow's
+  // validation gate, should that representation be dispatched in future.
+  if (normalized && typeof normalized === "object" && typeof normalized.SnapshotJSON === "string") {
+    normalized = JSON.parse(normalized.SnapshotJSON);
+  }
+
+  return normalized;
 }
