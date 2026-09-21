@@ -54,25 +54,128 @@
     }
   ],
   "marketEvents": [
-    { "date": "08 Sep", "event": "Fastmarkets weekly benchmark", "value": "$289/dmt", "impact": "Firm" },
-    { "date": "11 Sep", "event": "China port stocks", "value": "5.318 Mt", "impact": "Bearish" },
-    { "date": "15 Sep", "event": "LCB bulk 40/42 quote", "value": "$288/dmt", "impact": "Corroborates" },
-    { "date": "15 Sep", "event": "Durban → Tianjin freight", "value": "$35–36/mt", "impact": "Neutral" },
-    { "date": "16 Sep", "event": "SMM midpoint", "value": "$282.50/dmt", "impact": "Bearish" }
+    {
+      "date": "08 Sep",
+      "event": "Fastmarkets weekly benchmark",
+      "value": "$289/dmt",
+      "impact": "Firm"
+    },
+    {
+      "date": "11 Sep",
+      "event": "China port stocks",
+      "value": "5.318 Mt",
+      "impact": "Bearish"
+    },
+    {
+      "date": "15 Sep",
+      "event": "LCB bulk 40/42 quote",
+      "value": "$288/dmt",
+      "impact": "Corroborates"
+    },
+    {
+      "date": "15 Sep",
+      "event": "Durban → Tianjin freight",
+      "value": "$35–36/mt",
+      "impact": "Neutral"
+    },
+    {
+      "date": "16 Sep",
+      "event": "SMM midpoint",
+      "value": "$282.50/dmt",
+      "impact": "Bearish"
+    }
   ],
   "priceHistory": [
-    { "month": "Sep ’25", "observed": 282, "base": null, "bull": null, "bear": null },
-    { "month": "Oct", "observed": 272, "base": null, "bull": null, "bear": null },
-    { "month": "Nov", "observed": 271, "base": null, "bull": null, "bear": null },
-    { "month": "Dec", "observed": 264, "base": null, "bull": null, "bear": null },
-    { "month": "Jan ’26", "observed": 278, "base": null, "bull": null, "bear": null },
-    { "month": "Feb", "observed": 298, "base": null, "bull": null, "bear": null },
-    { "month": "Mar", "observed": 307.5, "base": null, "bull": null, "bear": null },
-    { "month": "Apr", "observed": 319, "base": null, "bull": null, "bear": null },
-    { "month": "May", "observed": 310, "base": null, "bull": null, "bear": null },
-    { "month": "Jun", "observed": 280, "base": null, "bull": null, "bear": null },
-    { "month": "Jul", "observed": 280, "base": null, "bull": null, "bear": null },
-    { "month": "Aug", "observed": 286, "base": null, "bull": null, "bear": null },
-    { "month": "Sep", "observed": 282.5, "base": 282.5, "bull": 282.5, "bear": 282.5 }
+    {
+      "month": "Sep ’25",
+      "observed": 282,
+      "base": null,
+      "bull": null,
+      "bear": null
+    },
+    {
+      "month": "Oct",
+      "observed": 272,
+      "base": null,
+      "bull": null,
+      "bear": null
+    },
+    {
+      "month": "Nov",
+      "observed": 271,
+      "base": null,
+      "bull": null,
+      "bear": null
+    },
+    {
+      "month": "Dec",
+      "observed": 264,
+      "base": null,
+      "bull": null,
+      "bear": null
+    },
+    {
+      "month": "Jan ’26",
+      "observed": 278,
+      "base": null,
+      "bull": null,
+      "bear": null
+    },
+    {
+      "month": "Feb",
+      "observed": 298,
+      "base": null,
+      "bull": null,
+      "bear": null
+    },
+    {
+      "month": "Mar",
+      "observed": 307.5,
+      "base": null,
+      "bull": null,
+      "bear": null
+    },
+    {
+      "month": "Apr",
+      "observed": 319,
+      "base": null,
+      "bull": null,
+      "bear": null
+    },
+    {
+      "month": "May",
+      "observed": 310,
+      "base": null,
+      "bull": null,
+      "bear": null
+    },
+    {
+      "month": "Jun",
+      "observed": 280,
+      "base": null,
+      "bull": null,
+      "bear": null
+    },
+    {
+      "month": "Jul",
+      "observed": 280,
+      "base": null,
+      "bull": null,
+      "bear": null
+    },
+    {
+      "month": "Aug",
+      "observed": 286,
+      "base": null,
+      "bull": null,
+      "bear": null
+    },
+    {
+      "month": "Sep",
+      "observed": 282.5,
+      "base": 282.5,
+      "bull": 282.5,
+      "bear": 282.5
+    }
   ]
 }
