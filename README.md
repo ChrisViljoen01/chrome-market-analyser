@@ -46,7 +46,7 @@ Each run executes `scripts/refresh-market-data.mjs` before the build. The script
 
 The market values used by the dashboard live in `public/market-snapshot.json`. Power Automate, a secure backend, or a reviewed manual process can update that JSON file, then the workflow validates it with `scripts/validate-market-snapshot.mjs` and publishes the site. This keeps credentials out of GitHub Pages while still allowing the dashboard to be populated automatically from an approved upstream process.
 
-Port-level chrome export flows are separated into `public/port-flows.json`. The current file intentionally contains no tonnage rows because Maputo, Richards Bay and Durban origin/tonnage data has not yet been verified from an approved internal, terminal, agent or licensed source. The **Port flows** tab shows that gap explicitly and lists the required data requests instead of filling the dashboard with unverified public article values.
+Port-level chrome export flows are separated into `public/port-flows.json`. The current file intentionally contains no shipment rows because Maputo, Richards Bay and Durban origin/tonnage data has not yet been verified from an approved internal, terminal, agent or licensed source. The **Port flows** tab shows that gap explicitly and lists the required data requests instead of filling the dashboard with unverified public article values. Safe official/aggregate context, such as national HS 261000 export totals from UN Comtrade/WITS, is displayed separately and is not allocated to individual ports.
 
 Recommended Power Automate flow:
 

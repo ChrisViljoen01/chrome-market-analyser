@@ -3,6 +3,35 @@
   "status": "awaiting_approved_source",
   "summary": "No verified port-level chrome export tonnage has been ingested. Public article references are not copied into the analyser until source terms and dashboard-use rights are approved.",
   "records": [],
+  "publicContext": [
+    {
+      "period": "2024",
+      "label": "South Africa chrome ore exports",
+      "tonnes": 20557000,
+      "scope": "National annual exports · all ports and border routes",
+      "source": "UN Comtrade / WITS · HS 261000",
+      "confidence": "Official aggregate",
+      "note": "Useful for market-size context only. This does not identify Durban, Richards Bay, Maputo, origin mine/region, vessel, MW/BC split or shipment-level routing."
+    },
+    {
+      "period": "2023",
+      "label": "South Africa chrome ore exports",
+      "tonnes": 17792000,
+      "scope": "National annual exports · all ports and border routes",
+      "source": "UN Comtrade / WITS · HS 261000",
+      "confidence": "Official aggregate",
+      "note": "Useful for year-on-year context only. This is not a port-flow record and should not be allocated to any individual port."
+    },
+    {
+      "period": "2023",
+      "label": "Maputo total ores handled",
+      "tonnes": 25000000,
+      "scope": "Port aggregate · mixed ores, not chrome-only",
+      "source": "Maputo Port / MPDC public operational reporting",
+      "confidence": "Public aggregate",
+      "note": "This includes ores such as chrome ore, ferrochrome, magnetite, coal and other minerals. It is displayed as context only and is not treated as chrome ore tonnage."
+    }
+  ],
   "sourcePlan": [
     {
       "id": "durban-internal",

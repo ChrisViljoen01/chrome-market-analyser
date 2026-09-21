@@ -147,11 +147,22 @@ type PortFlowSourcePlan = {
   request: string;
 };
 
+type PortFlowPublicContext = {
+  period: string;
+  label: string;
+  tonnes: number;
+  scope: string;
+  source: string;
+  confidence: "Official aggregate" | "Public aggregate";
+  note: string;
+};
+
 type PortFlowDataset = {
   generatedAt: string;
   status: PortFlowStatus;
   summary: string;
   records: PortFlowRecord[];
+  publicContext: PortFlowPublicContext[];
   sourcePlan: PortFlowSourcePlan[];
   requiredFields: string[];
 };
@@ -239,6 +250,35 @@ const fallbackPortFlows: PortFlowDataset = {
   status: "awaiting_approved_source",
   summary: "No verified port-level chrome export tonnage has been ingested. Public article references are not copied into the analyser until source terms and dashboard-use rights are approved.",
   records: [],
+  publicContext: [
+    {
+      period: "2024",
+      label: "South Africa chrome ore exports",
+      tonnes: 20557000,
+      scope: "National annual exports · all ports and border routes",
+      source: "UN Comtrade / WITS · HS 261000",
+      confidence: "Official aggregate",
+      note: "Useful for market-size context only. This does not identify Durban, Richards Bay, Maputo, origin mine/region, vessel, MW/BC split or shipment-level routing.",
+    },
+    {
+      period: "2023",
+      label: "South Africa chrome ore exports",
+      tonnes: 17792000,
+      scope: "National annual exports · all ports and border routes",
+      source: "UN Comtrade / WITS · HS 261000",
+      confidence: "Official aggregate",
+      note: "Useful for year-on-year context only. This is not a port-flow record and should not be allocated to any individual port.",
+    },
+    {
+      period: "2023",
+      label: "Maputo total ores handled",
+      tonnes: 25000000,
+      scope: "Port aggregate · mixed ores, not chrome-only",
+      source: "Maputo Port / MPDC public operational reporting",
+      confidence: "Public aggregate",
+      note: "This includes ores such as chrome ore, ferrochrome, magnetite, coal and other minerals. It is displayed as context only and is not treated as chrome ore tonnage.",
+    },
+  ],
   sourcePlan: [
     {
       id: "durban-internal",
@@ -775,6 +815,30 @@ function PortFlowsTab({ portFlows }: { portFlows: PortFlowDataset }) {
         </article>
       ) : null}
 
+      <article className="rounded-2xl border border-white/8 bg-[#0a1525]/95">
+        <PanelHeader eyebrow="Safe public context" title="Official and aggregate export references">
+          <DataBadge tone="cyan">{portFlows.publicContext.length} public context rows</DataBadge>
+        </PanelHeader>
+        <div className="grid gap-px overflow-hidden rounded-b-2xl bg-white/7 md:grid-cols-3">
+          {portFlows.publicContext.map((item) => (
+            <div key={`${item.period}-${item.label}-${item.scope}`} className="bg-[#0a1525] p-5">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-600">{item.period}</p>
+                  <h3 className="mt-1 text-sm font-semibold text-slate-200">{item.label}</h3>
+                </div>
+                <DataBadge tone={item.confidence === "Official aggregate" ? "emerald" : "slate"}>{item.confidence}</DataBadge>
+              </div>
+              <p className="mt-5 font-mono text-3xl font-semibold">{formatTonnes(item.tonnes)}</p>
+              <p className="mt-2 text-[10px] text-slate-600">{item.scope}</p>
+              <p className="mt-4 text-xs leading-6 text-slate-500">{item.note}</p>
+              <p className="mt-4 text-[10px] text-cyan-200/70">{item.source}</p>
+            </div>
+          ))}
+        </div>
+        <div className="border-t border-white/7 px-5 py-3 text-[10px] leading-5 text-slate-600">These values are context only. They do not populate the port-flow ledger because they do not identify verified chrome shipments by port, origin, vessel or MW/BC cargo type.</div>
+      </article>
+
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_420px]">
         <article className="overflow-hidden rounded-2xl border border-white/8 bg-[#0a1525]/95">
           <PanelHeader eyebrow="Port flow ledger" title="Chrome export tonnage by port and origin">
@@ -1116,6 +1180,7 @@ function isPortFlowDataset(value: unknown): value is PortFlowDataset {
     typeof candidate.status === "string" &&
     typeof candidate.summary === "string" &&
     Array.isArray(candidate.records) &&
+    Array.isArray(candidate.publicContext) &&
     Array.isArray(candidate.sourcePlan) &&
     Array.isArray(candidate.requiredFields) &&
     candidate.records.every((record) => {
@@ -1347,6 +1412,7 @@ export default function Dashboard() {
             status: portFlows.status,
             recordCount: portFlows.records.length,
             records: portFlows.records,
+            publicContext: portFlows.publicContext,
           },
           posture: "defensive",
         }),
@@ -1420,6 +1486,7 @@ export default function Dashboard() {
       ...marketSnapshot.metrics.map((metric) => ["headline", marketSnapshot.dataCutLabel, metric.label, metric.value, metric.source, metric.detail]),
       ...LCB_PRICES.map((row) => ["lcb_quote", "2026-09-15", `${row.origin} ${row.grade} ${row.product} ${row.mode} ${row.basis}`, String(row.price), row.currency + "/mt", "LCB"]),
       ...portFlows.records.map((row) => ["port_flow", row.period, `${row.port} ${row.product} ${row.cargoType} ${row.origin} to ${row.destination}`, String(row.tonnes), "t", `${row.source} · ${row.confidence}`]),
+      ...portFlows.publicContext.map((row) => ["port_flow_context", row.period, `${row.label} · ${row.scope}`, String(row.tonnes), "t", `${row.source} · ${row.confidence}`]),
     ];
     const csv = rows.map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(",")).join("\n");
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
