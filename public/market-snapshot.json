@@ -1,13 +1,13 @@
 {
-  "generatedAt": "2026-09-18T06:30:00.000Z",
-  "dataCutLabel": "16 Sep 2026 · 17:00 SAST",
-  "asOfIso": "2026-09-16T17:00:00+02:00",
+  "generatedAt": "2026-09-21T06:08:00Z",
+  "dataCutLabel": "21 Sep 2026 · 05:30 SAST",
+  "asOfIso": "2026-09-21T05:30:00+02:00",
   "currentPriceUsdPerDmt": 282.5,
-  "fxUsdZar": 16.2718,
+  "fxUsdZar": 16.263,
   "forecastInputs": {
     "inventoryWoW": 1.89,
     "freight": 35.5,
-    "fx": 16.27,
+    "fx": 16.263,
     "exportGrowth": 10.3,
     "tenderChange": -100
   },
@@ -15,16 +15,16 @@
     {
       "label": "SA 40–42 CIF",
       "value": "$282.50",
-      "delta": "−2.25%",
-      "detail": "SMM · 16 Sep",
-      "sentiment": "negative",
+      "delta": "0.00%",
+      "detail": "SMM · 21 Sep",
+      "sentiment": "neutral",
       "source": "Observed"
     },
     {
       "label": "China port stock",
       "value": "5.318 Mt",
       "delta": "+1.89%",
-      "detail": "98.6 kt WoW build",
+      "detail": "98.6 kt WoW · 11 Sep",
       "sentiment": "negative",
       "source": "Observed"
     },
@@ -32,7 +32,7 @@
       "label": "SA exports",
       "value": "2.65 Mt",
       "delta": "+10.3%",
-      "detail": "July · 2026 high",
+      "detail": "July · latest SARS month",
       "sentiment": "negative",
       "source": "Observed"
     },
@@ -40,37 +40,37 @@
       "label": "Durban → Tianjin",
       "value": "$35.50",
       "delta": "$35–36",
-      "detail": "10kt SHINC bends",
+      "detail": "LCB · 15 Sep indication",
       "sentiment": "neutral",
       "source": "Indication"
     },
     {
       "label": "USD / ZAR",
-      "value": "16.2718",
-      "delta": "15 Sep",
-      "detail": "Reference FX",
+      "value": "16.2630",
+      "delta": "18 Sep",
+      "detail": "SARB weighted avg",
       "sentiment": "neutral",
       "source": "Observed"
     }
   ],
   "marketEvents": [
     {
-      "date": "08 Sep",
-      "event": "Fastmarkets weekly benchmark",
-      "value": "$289/dmt",
-      "impact": "Firm"
+      "date": "21 Sep",
+      "event": "SMM CIF 40–42 midpoint",
+      "value": "$282.50/dmt",
+      "impact": "Stable"
     },
     {
-      "date": "11 Sep",
-      "event": "China port stocks",
-      "value": "5.318 Mt",
-      "impact": "Bearish"
+      "date": "21 Sep",
+      "event": "Tianjin 40–42 in-whs",
+      "value": "$7.02/dmtu",
+      "impact": "Firming"
     },
     {
-      "date": "15 Sep",
-      "event": "LCB bulk 40/42 quote",
-      "value": "$288/dmt",
-      "impact": "Corroborates"
+      "date": "18 Sep",
+      "event": "SARB USD/ZAR reference",
+      "value": "16.2630",
+      "impact": "Reference"
     },
     {
       "date": "15 Sep",
@@ -79,9 +79,15 @@
       "impact": "Neutral"
     },
     {
-      "date": "16 Sep",
-      "event": "SMM midpoint",
-      "value": "$282.50/dmt",
+      "date": "14 Sep",
+      "event": "Global chrome departures",
+      "value": "479.7 kt · −30.66% WoW",
+      "impact": "Supportive"
+    },
+    {
+      "date": "11 Sep",
+      "event": "China port stocks",
+      "value": "5.318 Mt · +1.89%",
       "impact": "Bearish"
     }
   ],

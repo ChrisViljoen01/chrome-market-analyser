@@ -4,11 +4,11 @@ The Connect Logistics Chrome Market Analyser is a reviewable market-intelligence
 
 The current public deployment is a **static GitHub Pages review build**. It uses the audited snapshot in `app/market-data.ts`; it does not connect to SharePoint, Microsoft Graph or Entra ID and it does not contain credentials.
 
-## Current status — 18 September 2026
+## Current status — 21 September 2026
 
 - The complete dashboard interface is implemented and visually verified.
 - The standalone Vite build is ready for GitHub Pages stakeholder review.
-- Dashboard market values are a verified static snapshot.
+- Dashboard market values are a verified snapshot with individually timestamped inputs; the current SMM CIF benchmark is dated 21 September 2026.
 - The optional Microsoft Graph/SharePoint adapter remains isolated under `api/` for a future private backend.
 - No Entra, Graph, SharePoint or client-secret configuration is required for the public review site.
 

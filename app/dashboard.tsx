@@ -59,7 +59,7 @@ import {
   TRANSPORT_LANES,
 } from "./market-data";
 
-const FX = 16.2718;
+const FX = 16.263;
 const FALLBACK_CURRENT_PRICE = 282.5;
 type DashboardTab = "overview" | "prices" | "flows" | "transport" | "forecast" | "ops" | "sources";
 
@@ -123,7 +123,7 @@ type MarketSnapshot = {
 };
 
 const fallbackMarketRefresh: MarketRefresh = {
-  generatedAt: "2026-09-18T06:30:00.000Z",
+  generatedAt: "2026-09-21T06:08:00Z",
   status: "pending",
   summary: "Official public source checks will run in GitHub Actions. Market prices remain manual/licensed until approved feeds are available.",
   dataMode: "manual_market_snapshot_with_public_source_checks",
@@ -142,15 +142,15 @@ type ForecastInputs = {
 const initialInputs: ForecastInputs = {
   inventoryWoW: 1.89,
   freight: 35.5,
-  fx: 16.27,
+  fx: 16.263,
   exportGrowth: 10.3,
   tenderChange: -100,
 };
 
 const fallbackMarketSnapshot: MarketSnapshot = {
-  generatedAt: "2026-09-18T06:30:00.000Z",
-  dataCutLabel: "16 Sep 2026 · 17:00 SAST",
-  asOfIso: "2026-09-16T17:00:00+02:00",
+  generatedAt: "2026-09-21T06:08:00Z",
+  dataCutLabel: "21 Sep 2026 · 05:30 SAST",
+  asOfIso: "2026-09-21T05:30:00+02:00",
   currentPriceUsdPerDmt: FALLBACK_CURRENT_PRICE,
   fxUsdZar: FX,
   forecastInputs: initialInputs,
@@ -158,16 +158,16 @@ const fallbackMarketSnapshot: MarketSnapshot = {
     {
       label: "SA 40–42 CIF",
       value: "$282.50",
-      delta: "−2.25%",
-      detail: "SMM · 16 Sep",
-      sentiment: "negative",
+      delta: "0.00%",
+      detail: "SMM · 21 Sep",
+      sentiment: "neutral",
       source: "Observed",
     },
     {
       label: "China port stock",
       value: "5.318 Mt",
       delta: "+1.89%",
-      detail: "98.6 kt WoW build",
+      detail: "98.6 kt WoW · 11 Sep",
       sentiment: "negative",
       source: "Observed",
     },
@@ -175,7 +175,7 @@ const fallbackMarketSnapshot: MarketSnapshot = {
       label: "SA exports",
       value: "2.65 Mt",
       delta: "+10.3%",
-      detail: "July · 2026 high",
+      detail: "July · latest SARS month",
       sentiment: "negative",
       source: "Observed",
     },
@@ -183,15 +183,15 @@ const fallbackMarketSnapshot: MarketSnapshot = {
       label: "Durban → Tianjin",
       value: "$35.50",
       delta: "$35–36",
-      detail: "10kt SHINC bends",
+      detail: "LCB · 15 Sep indication",
       sentiment: "neutral",
       source: "Indication",
     },
     {
       label: "USD / ZAR",
-      value: "16.2718",
-      delta: "15 Sep",
-      detail: "Reference FX",
+      value: "16.2630",
+      delta: "18 Sep",
+      detail: "SARB weighted avg",
       sentiment: "neutral",
       source: "Observed",
     },
@@ -530,7 +530,7 @@ function PricesTab() {
               </tbody>
             </table>
           </div>
-          <div className="border-t border-white/7 px-5 py-3 text-[10px] text-slate-600">USD conversion uses 16.2718 USD/ZAR. USD/mtu is a normalization aid, not a replacement for full chemistry and sizing.</div>
+          <div className="border-t border-white/7 px-5 py-3 text-[10px] text-slate-600">USD conversion uses the 18 September SARB reference of 16.2630 USD/ZAR. USD/mtu is a normalization aid, not a replacement for full chemistry and sizing.</div>
         </article>
 
         <article className="rounded-2xl border border-white/8 bg-[#0a1525]/95">
@@ -559,14 +559,14 @@ function PricesTab() {
 
       <div className="grid gap-5 lg:grid-cols-2">
         <article className="rounded-2xl border border-white/8 bg-[#0a1525]/95">
-          <PanelHeader eyebrow="Cross-check" title="Same-day benchmark comparison" />
+          <PanelHeader eyebrow="Cross-check" title="Timestamped benchmark comparison" />
           <div className="p-5 sm:p-6">
             <div className="grid grid-cols-3 gap-px overflow-hidden rounded-xl bg-white/7">
-              {[["LCB bulk 40/42", "$288.00", "Broker quote"], ["SMM midpoint", "$289.00", "15 Sep"], ["SMM midpoint", "$282.50", "16 Sep"]].map(([label, value, meta]) => (
+              {[["LCB bulk 40/42", "$288.00", "15 Sep"], ["SMM midpoint", "$289.00", "15 Sep"], ["SMM midpoint", "$282.50", "21 Sep"]].map(([label, value, meta]) => (
                 <div key={label + meta} className="bg-[#0d192b] p-4"><p className="text-[9px] uppercase tracking-wider text-slate-600">{label}</p><p className="mt-3 font-mono text-xl font-semibold">{value}</p><p className="mt-1 text-[10px] text-slate-500">{meta}</p></div>
               ))}
             </div>
-            <p className="mt-4 text-xs leading-6 text-slate-500">LCB aligned closely with SMM on 15 September. The next-day SMM move implies a softer prompt market and reinforces the need to timestamp every quote.</p>
+            <p className="mt-4 text-xs leading-6 text-slate-500">LCB aligned closely with SMM on 15 September. The SMM midpoint remains at $282.50 on 21 September, while the broker sheet is retained as an older indication rather than presented as current.</p>
           </div>
         </article>
 
@@ -1019,7 +1019,7 @@ function SourcesTab() {
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_340px]">
         <article className="overflow-hidden rounded-2xl border border-white/8 bg-[#0a1525]/95">
           <PanelHeader eyebrow="Data provenance" title="Source ledger" meta="Observed, indicated and modelled are kept separate">
-            <DataBadge tone="emerald">11 mapped sources</DataBadge>
+            <DataBadge tone="emerald">{SOURCES.length} mapped sources</DataBadge>
           </PanelHeader>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[880px] text-left">
@@ -1096,7 +1096,7 @@ export default function Dashboard() {
       inputs.exportGrowth * 0.35 +
       inputs.tenderChange / 22 +
       (inputs.freight - 35.5) * 0.55 +
-      (16.27 - inputs.fx) * 2.2;
+      (16.263 - inputs.fx) * 2.2;
     return Math.max(220, Math.min(340, Number(value.toFixed(1))));
   }, [inputs, marketSnapshot.currentPriceUsdPerDmt]);
 
