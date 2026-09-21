@@ -1,0 +1,60 @@
+{
+  "generatedAt": "2026-09-21T12:59:00+02:00",
+  "status": "awaiting_approved_source",
+  "summary": "No verified port-level chrome export tonnage has been ingested. Public article references are not copied into the analyser until source terms and dashboard-use rights are approved.",
+  "records": [],
+  "sourcePlan": [
+    {
+      "id": "durban-internal",
+      "label": "Durban internal shipping report",
+      "ports": ["Durban"],
+      "status": "to_confirm",
+      "owner": "Connect Logistics shipping team / Pats",
+      "request": "Confirm the existing Durban report format, cadence, cargo fields and whether MW/BC and origin can be separated."
+    },
+    {
+      "id": "lbh-durban",
+      "label": "LBH Durban",
+      "ports": ["Durban"],
+      "status": "to_request",
+      "owner": "LBH South Africa",
+      "request": "Request chrome ore vessel-call and cargo-tonnage data, including origin and MW/BC split where available."
+    },
+    {
+      "id": "lbh-richards-bay",
+      "label": "LBH Richards Bay",
+      "ports": ["Richards Bay"],
+      "status": "to_request",
+      "owner": "LBH South Africa",
+      "request": "Request Richards Bay chrome ore export tonnage, vessel calls, destination and cargo type where available."
+    },
+    {
+      "id": "lbh-maputo",
+      "label": "LBH Maputo",
+      "ports": ["Maputo"],
+      "status": "to_request",
+      "owner": "LBH Mozambique",
+      "request": "Request Maputo chrome ore export tonnage, vessel calls, destination and origin where available."
+    },
+    {
+      "id": "shinc",
+      "label": "SHINC / shipping agent data",
+      "ports": ["Durban", "Richards Bay", "Maputo"],
+      "status": "to_request",
+      "owner": "Shipping team",
+      "request": "Confirm whether SHINC or agent reports can provide comparable chrome ore shipment tonnage by port."
+    }
+  ],
+  "requiredFields": [
+    "period",
+    "port",
+    "tonnes",
+    "product",
+    "cargoType",
+    "origin",
+    "destination",
+    "vessel",
+    "source",
+    "confidence"
+  ]
+}

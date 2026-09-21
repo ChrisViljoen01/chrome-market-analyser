@@ -61,7 +61,7 @@ import {
 
 const FX = 16.263;
 const FALLBACK_CURRENT_PRICE = 282.5;
-type DashboardTab = "overview" | "prices" | "flows" | "transport" | "forecast" | "ops" | "sources";
+type DashboardTab = "overview" | "prices" | "flows" | "port-flows" | "transport" | "forecast" | "ops" | "sources";
 
 type MarketRefreshStatus = "pending" | "checked" | "partial" | "failed";
 
@@ -120,6 +120,40 @@ type MarketSnapshot = {
   metrics: MarketMetric[];
   marketEvents: MarketEvent[];
   priceHistory: PricePoint[];
+};
+
+type PortFlowStatus = "awaiting_approved_source" | "partial" | "verified";
+
+type PortFlowRecord = {
+  period: string;
+  port: "Durban" | "Richards Bay" | "Maputo" | string;
+  tonnes: number;
+  product: string;
+  cargoType: "MW" | "BC" | "Unknown" | string;
+  origin: string;
+  destination: string;
+  vessel?: string;
+  source: string;
+  confidence: "Observed" | "Internal" | "Indication" | "Estimated";
+  note?: string;
+};
+
+type PortFlowSourcePlan = {
+  id: string;
+  label: string;
+  ports: string[];
+  status: "to_confirm" | "to_request" | "requested" | "received" | "blocked";
+  owner: string;
+  request: string;
+};
+
+type PortFlowDataset = {
+  generatedAt: string;
+  status: PortFlowStatus;
+  summary: string;
+  records: PortFlowRecord[];
+  sourcePlan: PortFlowSourcePlan[];
+  requiredFields: string[];
 };
 
 const fallbackMarketRefresh: MarketRefresh = {
@@ -198,6 +232,56 @@ const fallbackMarketSnapshot: MarketSnapshot = {
   ],
   marketEvents: [...MARKET_EVENTS],
   priceHistory: [...PRICE_HISTORY],
+};
+
+const fallbackPortFlows: PortFlowDataset = {
+  generatedAt: "2026-09-21T12:59:00+02:00",
+  status: "awaiting_approved_source",
+  summary: "No verified port-level chrome export tonnage has been ingested. Public article references are not copied into the analyser until source terms and dashboard-use rights are approved.",
+  records: [],
+  sourcePlan: [
+    {
+      id: "durban-internal",
+      label: "Durban internal shipping report",
+      ports: ["Durban"],
+      status: "to_confirm",
+      owner: "Connect Logistics shipping team / Pats",
+      request: "Confirm the existing Durban report format, cadence, cargo fields and whether MW/BC and origin can be separated.",
+    },
+    {
+      id: "lbh-durban",
+      label: "LBH Durban",
+      ports: ["Durban"],
+      status: "to_request",
+      owner: "LBH South Africa",
+      request: "Request chrome ore vessel-call and cargo-tonnage data, including origin and MW/BC split where available.",
+    },
+    {
+      id: "lbh-richards-bay",
+      label: "LBH Richards Bay",
+      ports: ["Richards Bay"],
+      status: "to_request",
+      owner: "LBH South Africa",
+      request: "Request Richards Bay chrome ore export tonnage, vessel calls, destination and cargo type where available.",
+    },
+    {
+      id: "lbh-maputo",
+      label: "LBH Maputo",
+      ports: ["Maputo"],
+      status: "to_request",
+      owner: "LBH Mozambique",
+      request: "Request Maputo chrome ore export tonnage, vessel calls, destination and origin where available.",
+    },
+    {
+      id: "shinc",
+      label: "SHINC / shipping agent data",
+      ports: ["Durban", "Richards Bay", "Maputo"],
+      status: "to_request",
+      owner: "Shipping team",
+      request: "Confirm whether SHINC or agent reports can provide comparable chrome ore shipment tonnage by port.",
+    },
+  ],
+  requiredFields: ["period", "port", "tonnes", "product", "cargoType", "origin", "destination", "vessel", "source", "confidence"],
 };
 
 type TransportInputs = {
@@ -649,6 +733,120 @@ function FlowsTab() {
   );
 }
 
+function PortFlowsTab({ portFlows }: { portFlows: PortFlowDataset }) {
+  const ports = ["Durban", "Richards Bay", "Maputo"];
+  const totalTonnes = portFlows.records.reduce((sum, record) => sum + record.tonnes, 0);
+  const tonnesByPort = ports.map((port) => ({
+    port,
+    tonnes: portFlows.records.filter((record) => record.port === port).reduce((sum, record) => sum + record.tonnes, 0),
+  }));
+  const hasVerifiedRecords = portFlows.records.length > 0;
+
+  return (
+    <div className="space-y-5">
+      <div className="grid gap-5 lg:grid-cols-4">
+        <article className="rounded-2xl border border-white/8 bg-[#0a1525]/95 p-5 sm:p-6">
+          <Ship className="size-5 text-cyan-300" />
+          <p className="mt-6 text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-600">Verified export tonnes</p>
+          <p className="mt-2 font-mono text-3xl font-semibold">{formatTonnes(totalTonnes)}</p>
+          <p className="mt-3 text-xs leading-6 text-slate-500">{hasVerifiedRecords ? "Approved port-flow records loaded." : "No approved port-flow records loaded yet."}</p>
+        </article>
+        {tonnesByPort.map((row) => (
+          <article key={row.port} className="rounded-2xl border border-white/8 bg-[#0a1525]/95 p-5 sm:p-6">
+            <MapPinned className="size-5 text-cyan-300" />
+            <p className="mt-6 text-[9px] font-semibold uppercase tracking-[0.18em] text-slate-600">{row.port}</p>
+            <p className="mt-2 font-mono text-3xl font-semibold">{formatTonnes(row.tonnes)}</p>
+            <p className="mt-3 text-xs leading-6 text-slate-500">{row.tonnes > 0 ? "Approved shipment records only." : "Awaiting LBH, SHINC or internal evidence."}</p>
+          </article>
+        ))}
+      </div>
+
+      {!hasVerifiedRecords ? (
+        <article className="rounded-2xl border border-amber-300/15 bg-amber-300/[0.045] p-5 sm:p-6">
+          <div className="flex items-start gap-4">
+            <CircleAlert className="mt-0.5 size-5 shrink-0 text-amber-200" />
+            <div>
+              <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-amber-200/60">Awaiting approved port-flow data</p>
+              <h2 className="mt-1 text-base font-semibold text-amber-100">No tonnage has been populated because no verified dataset is in the repository.</h2>
+              <p className="mt-3 max-w-4xl text-xs leading-6 text-amber-100/65">{portFlows.summary}</p>
+              <p className="mt-3 max-w-4xl text-xs leading-6 text-amber-100/65">Public articles may mention Maputo, Richards Bay or Durban departures, but those figures are not copied into this analyser until the source grants use rights or the values are confirmed by an approved internal, agent or terminal dataset.</p>
+            </div>
+          </div>
+        </article>
+      ) : null}
+
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_420px]">
+        <article className="overflow-hidden rounded-2xl border border-white/8 bg-[#0a1525]/95">
+          <PanelHeader eyebrow="Port flow ledger" title="Chrome export tonnage by port and origin">
+            <DataBadge tone={hasVerifiedRecords ? "emerald" : "amber"}>{hasVerifiedRecords ? "Verified records" : "No records"}</DataBadge>
+          </PanelHeader>
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[980px] text-left">
+              <thead className="border-b border-white/7 bg-white/[0.02] text-[9px] uppercase tracking-[0.16em] text-slate-600">
+                <tr>
+                  <th className="px-5 py-3">Period</th>
+                  <th className="px-4 py-3">Port</th>
+                  <th className="px-4 py-3 text-right">Tonnes</th>
+                  <th className="px-4 py-3">Product</th>
+                  <th className="px-4 py-3">MW / BC</th>
+                  <th className="px-4 py-3">Origin</th>
+                  <th className="px-4 py-3">Destination</th>
+                  <th className="px-4 py-3">Source</th>
+                  <th className="px-5 py-3">Confidence</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/6">
+                {hasVerifiedRecords ? portFlows.records.map((record) => (
+                  <tr key={`${record.period}-${record.port}-${record.origin}-${record.destination}-${record.tonnes}`} className="text-xs text-slate-400">
+                    <td className="px-5 py-3 font-mono text-slate-300">{record.period}</td>
+                    <td className="px-4 py-3">{record.port}</td>
+                    <td className="px-4 py-3 text-right font-mono font-semibold text-slate-100">{record.tonnes.toLocaleString()}</td>
+                    <td className="px-4 py-3">{record.product}</td>
+                    <td className="px-4 py-3">{record.cargoType}</td>
+                    <td className="px-4 py-3">{record.origin}</td>
+                    <td className="px-4 py-3">{record.destination}</td>
+                    <td className="px-4 py-3">{record.source}</td>
+                    <td className="px-5 py-3"><DataBadge tone={record.confidence === "Observed" ? "emerald" : record.confidence === "Estimated" ? "amber" : "slate"}>{record.confidence}</DataBadge></td>
+                  </tr>
+                )) : (
+                  <tr>
+                    <td colSpan={9} className="px-5 py-10 text-center text-xs leading-6 text-slate-500">No rows are shown because no approved port-flow records have been ingested. Add records to <span className="font-mono text-slate-300">public/port-flows.json</span> or connect the future SharePoint list after source approval.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          <div className="border-t border-white/7 px-5 py-3 text-[10px] leading-5 text-slate-600">Origin must come from the shipment record, terminal/agent file or approved internal source. If origin is inferred from route, customer or stockpile, mark the row as Estimated.</div>
+        </article>
+
+        <article className="rounded-2xl border border-white/8 bg-[#0a1525]/95">
+          <PanelHeader eyebrow="Source worklist" title="Required data requests" meta={formatRefreshTime(portFlows.generatedAt)} />
+          <div className="divide-y divide-white/7">
+            {portFlows.sourcePlan.map((source) => (
+              <div key={source.id} className="px-5 py-4 sm:px-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-semibold text-slate-300">{source.label}</p>
+                    <p className="mt-1 text-[10px] text-slate-600">{source.owner} · {source.ports.join(", ")}</p>
+                  </div>
+                  <DataBadge tone={source.status === "received" ? "emerald" : source.status === "blocked" ? "rose" : "amber"}>{source.status.replaceAll("_", " ")}</DataBadge>
+                </div>
+                <p className="mt-3 text-[11px] leading-5 text-slate-500">{source.request}</p>
+              </div>
+            ))}
+          </div>
+        </article>
+      </div>
+    </div>
+  );
+}
+
+function formatTonnes(value: number) {
+  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(2)} Mt`;
+  if (value >= 1_000) return `${(value / 1_000).toFixed(1)} kt`;
+  return `${value.toLocaleString()} t`;
+}
+
 function DriverSlider({
   label,
   value,
@@ -910,6 +1108,24 @@ function isMarketSnapshot(value: unknown): value is MarketSnapshot {
   );
 }
 
+function isPortFlowDataset(value: unknown): value is PortFlowDataset {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return false;
+  const candidate = value as Partial<PortFlowDataset>;
+  return (
+    typeof candidate.generatedAt === "string" &&
+    typeof candidate.status === "string" &&
+    typeof candidate.summary === "string" &&
+    Array.isArray(candidate.records) &&
+    Array.isArray(candidate.sourcePlan) &&
+    Array.isArray(candidate.requiredFields) &&
+    candidate.records.every((record) => {
+      if (!record || typeof record !== "object" || Array.isArray(record)) return false;
+      const row = record as Partial<PortFlowRecord>;
+      return typeof row.period === "string" && typeof row.port === "string" && isNumber(row.tonnes) && row.tonnes >= 0 && typeof row.source === "string" && typeof row.confidence === "string";
+    })
+  );
+}
+
 function formatRefreshTime(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "Pending";
@@ -1064,6 +1280,7 @@ export default function Dashboard() {
   const [transportInputs, setTransportInputs] = useState<TransportInputs>(initialTransport);
   const [marketRefresh, setMarketRefresh] = useState<MarketRefresh>(fallbackMarketRefresh);
   const [marketSnapshot, setMarketSnapshot] = useState<MarketSnapshot>(fallbackMarketSnapshot);
+  const [portFlows, setPortFlows] = useState<PortFlowDataset>(fallbackPortFlows);
   const activeTabRef = useRef(activeTab);
 
   useEffect(() => {
@@ -1084,6 +1301,11 @@ export default function Dashboard() {
           if (!isMarketSnapshot(payload)) return;
           setMarketSnapshot(payload);
           setInputs(payload.forecastInputs);
+        }),
+      fetch("port-flows.json", { cache: "no-store", signal: controller.signal })
+        .then((response) => response.ok ? response.json() : null)
+        .then((payload: unknown) => {
+          if (isPortFlowDataset(payload)) setPortFlows(payload);
         }),
     ]).catch(() => undefined);
     return () => controller.abort();
@@ -1113,7 +1335,7 @@ export default function Dashboard() {
       void Promise.resolve(modelContext.registerTool({
         name: "read_chrome_market_snapshot",
         title: "Read chrome market snapshot",
-        description: "Read the latest verified chrome price, inventory, export, freight and market-posture values shown in the dashboard.",
+        description: "Read the latest verified chrome price, inventory, export, freight, port-flow and market-posture values shown in the dashboard.",
         inputSchema: { type: "object", properties: {}, additionalProperties: false },
         annotations: { readOnlyHint: true, untrustedContentHint: false },
         execute: () => ({
@@ -1121,6 +1343,11 @@ export default function Dashboard() {
           activeView: activeTabRef.current,
           cifUsdPerDmt: marketSnapshot.currentPriceUsdPerDmt,
           metrics: marketSnapshot.metrics,
+          portFlows: {
+            status: portFlows.status,
+            recordCount: portFlows.records.length,
+            records: portFlows.records,
+          },
           posture: "defensive",
         }),
       }, { signal: lifecycle.signal })).catch(report);
@@ -1184,7 +1411,7 @@ export default function Dashboard() {
       return () => lifecycle.abort();
     }
     return () => lifecycle.abort();
-  }, [marketSnapshot]);
+  }, [marketSnapshot, portFlows]);
 
   const exportCsv = () => {
     const rows = [
@@ -1192,6 +1419,7 @@ export default function Dashboard() {
       ["price", marketSnapshot.dataCutLabel, "SA 40-42 concentrate CIF China", String(marketSnapshot.currentPriceUsdPerDmt), "USD/dmt", "Approved snapshot"],
       ...marketSnapshot.metrics.map((metric) => ["headline", marketSnapshot.dataCutLabel, metric.label, metric.value, metric.source, metric.detail]),
       ...LCB_PRICES.map((row) => ["lcb_quote", "2026-09-15", `${row.origin} ${row.grade} ${row.product} ${row.mode} ${row.basis}`, String(row.price), row.currency + "/mt", "LCB"]),
+      ...portFlows.records.map((row) => ["port_flow", row.period, `${row.port} ${row.product} ${row.cargoType} ${row.origin} to ${row.destination}`, String(row.tonnes), "t", `${row.source} · ${row.confidence}`]),
     ];
     const csv = rows.map((row) => row.map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(",")).join("\n");
     const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
@@ -1216,7 +1444,7 @@ export default function Dashboard() {
                   </div>
                   <div className="hidden flex-1 justify-center lg:flex">
                     <TabsList variant="line" className="h-12 gap-2">
-                      {[["overview", "Overview"], ["prices", "Prices & basis"], ["flows", "Ocean freight"], ["transport", "Transport Lab"], ["forecast", "Forecast Lab"], ["ops", "Data Ops"], ["sources", "Sources"]].map(([value, label]) => (
+                      {[["overview", "Overview"], ["prices", "Prices & basis"], ["flows", "Ocean freight"], ["port-flows", "Port flows"], ["transport", "Transport Lab"], ["forecast", "Forecast Lab"], ["ops", "Data Ops"], ["sources", "Sources"]].map(([value, label]) => (
                         <TabsTrigger key={value} value={value} className="h-12 px-3 text-xs text-slate-500 after:bg-cyan-300 data-[state=active]:text-cyan-100">{label}</TabsTrigger>
                       ))}
                     </TabsList>
@@ -1228,7 +1456,7 @@ export default function Dashboard() {
                 </div>
                 <div className="overflow-x-auto lg:hidden">
                   <TabsList variant="line" className="h-11 min-w-max">
-                    {[["overview", "Overview"], ["prices", "Prices"], ["flows", "Ocean"], ["transport", "Transport"], ["forecast", "Forecast"], ["ops", "Data Ops"], ["sources", "Sources"]].map(([value, label]) => <TabsTrigger key={value} value={value} className="h-11 px-3 text-xs text-slate-500 after:bg-cyan-300 data-[state=active]:text-cyan-100">{label}</TabsTrigger>)}
+                    {[["overview", "Overview"], ["prices", "Prices"], ["flows", "Ocean"], ["port-flows", "Ports"], ["transport", "Transport"], ["forecast", "Forecast"], ["ops", "Data Ops"], ["sources", "Sources"]].map(([value, label]) => <TabsTrigger key={value} value={value} className="h-11 px-3 text-xs text-slate-500 after:bg-cyan-300 data-[state=active]:text-cyan-100">{label}</TabsTrigger>)}
                   </TabsList>
                 </div>
               </div>
@@ -1250,6 +1478,7 @@ export default function Dashboard() {
               <TabsContent value="overview"><Overview forecastTarget={forecastTarget} setActiveTab={setActiveTab} marketSnapshot={marketSnapshot} /></TabsContent>
               <TabsContent value="prices"><PricesTab /></TabsContent>
               <TabsContent value="flows"><FlowsTab /></TabsContent>
+              <TabsContent value="port-flows"><PortFlowsTab portFlows={portFlows} /></TabsContent>
               <TabsContent value="transport"><TransportTab inputs={transportInputs} setInputs={setTransportInputs} /></TabsContent>
               <TabsContent value="forecast"><ForecastTab inputs={inputs} setInputs={setInputs} forecastTarget={forecastTarget} currentPrice={marketSnapshot.currentPriceUsdPerDmt} priceHistory={marketSnapshot.priceHistory} /></TabsContent>
               <TabsContent value="ops"><DataOpsTab marketRefresh={marketRefresh} /></TabsContent>
